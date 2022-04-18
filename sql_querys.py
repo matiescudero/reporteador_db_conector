@@ -32,3 +32,11 @@ salmonidos = '''
 
              SELECT 'Return Value' = @return_value;
              '''
+
+estaciones = '''
+             DECLARE @return_value int;
+
+             EXEC @return_value = [dbo].[sp_Acui_estaciones_areasPSMB] @AREA = null, @usuario = 999999999;
+
+             SELECT 'Return Value' = @return_value;
+             '''
