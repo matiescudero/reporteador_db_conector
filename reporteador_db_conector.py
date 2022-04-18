@@ -9,7 +9,7 @@ from datetime import datetime
 import sql_querys as querys
 
 
-def dfs_to_bd(config, mapstore_engine, df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos):
+def dfs_to_bd(config, mapstore_engine, df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones):
     """Copy the pandas Dataframes to the 'entradas' schema in the mapstore database. 
 
     Args:
@@ -19,6 +19,7 @@ def dfs_to_bd(config, mapstore_engine, df_areas_psmb, df_centros_psmb, df_existe
         df_centros_psmb (pandas DataFrame): Dataframe with information of PSMB centers.
         df_existencias (pandas DataFrame): Dataframe with information of tons of mollusk.
         df_salmonidos (pandas DataFrame): Dataframe with information of tons of salmon.
+        df_estaciones (pandas DataFrame): Dataframe with PSMB stations.
     
     """
 
@@ -26,6 +27,7 @@ def dfs_to_bd(config, mapstore_engine, df_areas_psmb, df_centros_psmb, df_existe
     df_centros_psmb.to_sql('centros_psmb', mapstore_engine, schema = config['mapstore']['schema'], if_exists = 'replace', index = False)
     df_existencias.to_sql('existencias_moluscos', mapstore_engine, schema = config['mapstore']['schema'], if_exists = 'replace', index = False)
     df_salmonidos.to_sql('existencias_salmonidos', mapstore_engine, schema = config['mapstore']['schema'], if_exists = 'replace', index = False)
+    df_estaciones.to_sql('estaciones', mapstore_engine, schema = config['mapstore']['schema'], if_exists = 'replace', index = False)
 
 
 def tables_to_df(reporteador_connection, query_file):
@@ -47,10 +49,11 @@ def tables_to_df(reporteador_connection, query_file):
     df_centros_psmb = pd.read_sql(query_file.centros_psmb, reporteador_connection)
     df_existencias = pd.read_sql(query_file.existencias, reporteador_connection)
     df_salmonidos = pd.read_sql(query_file.salmonidos, reporteador_connection)
+    df_estaciones = pd.read_sql(query_file.estaciones, reporteador_connection)
 
     print("[Ok] - SP's executed and stored successfully")
 
-    return df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos
+    return df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones
 
 def create_mapstore_engine(mapstore_connection):
     """Creates the SQL Alchemy engine to access to the Mapstore database's tables. 
@@ -165,10 +168,10 @@ def main(argv):
     mapstore_engine = create_mapstore_engine(mapstore_connection)
 
     #Execute 'reporteador' database SP's and store them as pandas DFs
-    df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos = tables_to_df(reporteador_connection, querys)
+    df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones = tables_to_df(reporteador_connection, querys)
 
     #Pandas DFs to mapstore database
-    dfs_to_bd(config, mapstore_engine, df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos)
+    dfs_to_bd(config, mapstore_engine, df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones)
 
     end = datetime.now()
 
