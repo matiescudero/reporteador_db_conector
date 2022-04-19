@@ -12,5 +12,5 @@
 	"port": "5432",
 	"passwd": "postgres",
 	"user": "postgres"
-    }	
+    }
 }
