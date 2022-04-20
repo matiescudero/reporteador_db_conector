@@ -12,5 +12,22 @@
 	"port": "5432",
 	"passwd": "postgres",
 	"user": "postgres"
+    },
+    "ide_subpesca": {
+        "headers": {
+            "authority": "geoportal.subpesca.cl",
+            "accept": "*/*",
+            "accept-language": "es-ES,es;q=0.9,en;q=0.8",
+            "origin": "https://mapas.subpesca.cl",
+            "referer": "https://mapas.subpesca.cl/",
+            "sec-ch-ua": "' Not A;Brand';v='99', 'Chromium';v='100', 'Google Chrome';v='100'",
+            "sec-ch-ua-mobile": "?1",
+            "sec-ch-ua-platform": "'Android'",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "user-agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Mobile Safari/537.36"
+        },
+        "request_url": "https://geoportal.subpesca.cl/server/rest/services/IDE_PUBLICO/SRMPUB_ACUICULTURA/MapServer/0/query?f=json&where=REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.REGION%20%3D%20%27REGI%C3%93N%20DE%20LOS%20LAGOS%27&returnGeometry=true&spatialRel=esriSpatialRelIntersects&maxAllowableOffset=0&outFields=*&outSR=102100"
     }
 }
