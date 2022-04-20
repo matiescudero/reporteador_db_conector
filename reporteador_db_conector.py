@@ -152,25 +152,25 @@ def get_parameters(argv):
 def main(argv):
     start = datetime.now()
 
-    #Get parameters
+    # Get parameters
     config_filepath = get_parameters(argv)
 
-    #Get dbs config parameters
+    # Get dbs config parameters
     config = get_config(config_filepath)
 
-    #Connect to 'reporteador' database
+    # Connect to 'reporteador' database
     reporteador_connection = connect_reporteador_db(config)
 
-    #Connect to 'mapstore' database
+    # Connect to 'mapstore' database
     mapstore_connection = connect_mapstore_db(config)
 
-    #Create mapstore's database engine
+    # Create mapstore's database engine
     mapstore_engine = create_mapstore_engine(mapstore_connection)
 
-    #Execute 'reporteador' database SP's and store them as pandas DFs
+    # Execute 'reporteador' database SP's and store them as pandas DFs
     df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones = tables_to_df(reporteador_connection, querys)
 
-    #Pandas DFs to mapstore database
+    # Pandas DFs to mapstore database
     dfs_to_bd(config, mapstore_engine, df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones)
 
     end = datetime.now()
