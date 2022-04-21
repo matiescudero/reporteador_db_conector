@@ -17,7 +17,7 @@ def execute_sql_query(mapstore_engine, sql_query):
         sql_query (sqlalchemy.sql.elements.TextClause): 'add_geometry_centros.sql' query
     """
 
-    with mapstore_engine.connect() as con:
+    with mapstore_engine.connect().execution_options(autocommit=True) as con:
         con.execute(sql_query)
     print("[OK] - SQL query successfully executed")
 
