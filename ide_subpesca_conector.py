@@ -5,7 +5,6 @@ import pandas as pd
 from shapely.geometry import Polygon
 from sqlalchemy import create_engine
 from sqlalchemy import text
-import json
 from datetime import datetime
 
 
