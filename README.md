@@ -15,7 +15,6 @@ flowchart TD
   B -- Sí --> C[ide_subpesca_conector.py];
   C --> D[reporteador_db_conector.py];
   B -- No --> D;
-  D --> E[preprocess_reporteador.py];
-  E --> F[generate_spatial_outputs.py];
+  D --> F[generate_spatial_outputs.py];
   F --> G([Capas Mapstore Actualizadas]);
 ```
