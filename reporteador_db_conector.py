@@ -2,11 +2,37 @@ import sys
 import json
 import pandas as pd
 from sqlalchemy import create_engine
+from sqlalchemy import text
 import pyodbc
 from datetime import datetime
 
 #python file with SP's querys
 import sql_querys as querys
+
+
+def execute_sql_query(mapstore_engine, sql_query):
+    """Execute the 'reporteador_preprocessing.sql' query on mapstore database.
+
+    Args:
+        mapstore_engine (sqlalchemy.engine.base.Engine): Mapstore DB sqlalchemy engine.
+        sql_query (sqlalchemy.sql.elements.TextClause): 'reporteador_preprocessing' query
+    """
+
+    with mapstore_engine.connect().execution_options(autocommit=True) as con:
+        con.execute(sql_query)
+    print("[OK] - SQL query successfully executed")
+
+def open_sql_query():
+    """Open the SQL query to process the 'existencias' table.
+
+    Returns:
+        sqlalchemy.sql.elements.TextClause
+    """
+
+    with open("./sql_queries/reporteador_preprocessing.sql") as file:
+        sql_query = text(file.read())
+    print("[OK] - SQL file successfully opened")
+    return sql_query
 
 
 def dfs_to_bd(config, mapstore_engine, df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones):
@@ -173,6 +199,12 @@ def main(argv):
     # Pandas DFs to mapstore database
     dfs_to_bd(config, mapstore_engine, df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones)
 
+    # Open the 'reporteador_preprocessing.sql' file
+    sql_query = open_sql_query()
+
+    # Execute the SQL to preprocces the input tables
+    execute_sql_query(mapstore_engine, sql_query)
+    
     end = datetime.now()
 
     print(f"[OK] - Tables successfully copied to mapstore's database. Time elapsed: {end - start}")
