@@ -150,6 +150,28 @@ GROUP BY centros.codigoarea, areas."Nombre Área");
 -- /* 1.5 Existencias Salmónidos */ ---
 ---------------------------------------
 
+DROP TABLE IF EXISTS capas_estaticas.centros_salmonidos;
+
+CREATE TABLE capas_estaticas.centros_salmonidos AS (SELECT shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.N_CODIGOCENTRO" as codigocentro,
+										  shp.geom AS geom,
+										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.TITULAR" AS titular,
+										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.ESPECIES" AS especies,
+										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.TOPONIMIO" AS toponimio,
+										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_ESTADOTRAMITE" AS t_estadotramite,
+										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.F_RESOLSSP" AS f_resolucion,
+										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_GRUPOESPECIE" AS t_grupoespecie,
+										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.C_TIPOPORCION" AS c_tipoporcion,
+										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.SUPERFICIETOTAL" AS superficie,
+										  exist."Toneladas" AS ton,
+										  exist."Exist_3m" AS exist_3m
+FROM entradas.concesiones_acuicultura AS shp
+LEFT JOIN entradas.existencias_salmonidos AS exist
+ON shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.N_CODIGOCENTRO" = exist."Cd_Centro"
+WHERE shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.REGION" = 'REGIÓN DE LOS LAGOS' AND
+											(shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_GRUPOESPECIE" = 'SALMONES' AND
+											 shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_ESTADOTRAMITE" = 'CONCESION OTORGADA'));
+
+
 -------------------------------------
 ----- /* 2. TABLAS MRSAT */ ---------
 -------------------------------------
@@ -331,6 +353,17 @@ SET accion = CASE WHEN n_accion = 3 THEN 'Cerrada'
 ALTER TABLE capas_estaticas.areas_contingencia
 DROP COLUMN cod_area, 
 DROP COLUMN n_accion;
+
+-- Capa que incluye el centroide del centro de la estación que  
+
+DROP TABLE IF EXISTS capas_estaticas.centro_causal;
+
+CREATE TABLE capas_estaticas.centro_causal AS
+(SELECT causal.cod_centro, ST_CENTROID(shp.geom) as geom, causal.resultado, causal.causal
+FROM causal_area AS causal
+JOIN entradas.concesiones_acuicultura AS shp
+ON shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.N_CODIGOCENTRO" = causal.cod_centro);
+
 
 -- Se generan índices espaciales para las capas espaciales de salida
 
