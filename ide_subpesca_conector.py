@@ -1,14 +1,17 @@
 import requests
 import sys
+import os
 import json
 import pandas as pd
+import logging
 from shapely.geometry import Polygon
 from sqlalchemy import create_engine
 from sqlalchemy import text
 from datetime import datetime
 
 
-def execute_sql_query(mapstore_engine, sql_query):
+
+def execute_sql_query(mapstore_engine, sql_query, logger):
     """Execute the 'add_geometry_centros.sql' query on mapstore database.
 
     Args:
@@ -19,8 +22,9 @@ def execute_sql_query(mapstore_engine, sql_query):
     with mapstore_engine.connect().execution_options(autocommit=True) as con:
         con.execute(sql_query)
     print("[OK] - SQL query successfully executed")
+    logger.debug("[OK] - EXECUTE_SQL_QUERY")
 
-def open_sql_query():
+def open_sql_query(logger):
     """Open the SQL query to add the geometry type to the 'centros_acuicultura' table on mapstore database.
 
     Returns:
@@ -30,9 +34,10 @@ def open_sql_query():
     with open("./sql_queries/add_geometry_centros.sql") as file:
         sql_query = text(file.read())
     print("[OK] - SQL file successfully opened")
+    logger.debug("[OK] - OPEN_SQL_QUERY")
     return sql_query
  
-def df_to_db(centros_df, config_data, mapstore_engine):
+def df_to_db(centros_df, config_data, mapstore_engine, logger):
     """Copy the centros_df DataFrame to the mapstore database.
 
     Args:
@@ -51,8 +56,9 @@ def df_to_db(centros_df, config_data, mapstore_engine):
                         index = False)
 
     print("[OK] - DataFrame successfully copied to Mapstore database")
+    logger.debug("[OK] - DF_TO_DB")
 
-def create_mapstore_engine(mapstore_connection):
+def create_mapstore_engine(mapstore_connection, logger):
     """Create sqlalchemy mapstore engine based on the mapstore connection string.
 
     Args:
@@ -64,9 +70,10 @@ def create_mapstore_engine(mapstore_connection):
 
     mapstore_engine = create_engine(mapstore_connection)
     print("[OK] - SQLAlchemy engine succesfully generated")
+    logger.debug("[OK] - CREATE_MAPSTORE_ENGINE")
     return mapstore_engine
 
-def create_mapstore_connection(config_data):
+def create_mapstore_connection(config_data, logger):
     """Create mapstore connection string based on the config file parameters.
 
     Args:
@@ -83,9 +90,10 @@ def create_mapstore_connection(config_data):
         config_data['mapstore']['port'], 
         config_data['mapstore']['db'])
     print("[OK] - Connection string successfully generated")
+    logger.debug("[OK] - CREATE_MAPSTORE_CONNECTION")
     return mapstore_connection   
 
-def drop_str_geometry(centros_df):
+def drop_str_geometry(centros_df, logger):
     """Drop the previous geometry column.
 
     Args:
@@ -97,9 +105,10 @@ def drop_str_geometry(centros_df):
 
     centros_df.drop('geometry.rings', axis=1, inplace=True)
     print("[OK] - Old geometry column successfully dropped")
+    logger.debug("[OK] - DROP_STR_GEOMETRY")
     return centros_df
 
-def transform_geometry_column(centros_df):
+def transform_geometry_column(centros_df, logger):
     """Transform the geometry column to a SQL readable format.
 
     Args:
@@ -111,9 +120,10 @@ def transform_geometry_column(centros_df):
 
     centros_df["geometry"] = centros_df["geometry"].apply(Polygon).apply(str)
     print("[OK] - Geometry column format successfully converted")
+    logger.debug("[OK] - TRANSFORM GEOMETRY COLUMN")
     return centros_df
 
-def polygon_coords_to_df(centros_df, coord_list):
+def polygon_coords_to_df(centros_df, coord_list, logger):
     """Appends the list of coordinates to the centros_df DataFrame as a column.
 
     Args:
@@ -126,9 +136,10 @@ def polygon_coords_to_df(centros_df, coord_list):
 
     centros_df["geometry"] = coord_list
     print("[OK] - New geometry column successfully appended")
+    logger.debug("[OK] - POLYGON_COORDS_TO_DF")
     return centros_df
 
-def list_to_tuples(centros_df):
+def list_to_tuples(centros_df, logger):
     """Transforms the "geometry.rings" column from list of lists to a list of tuples. 
 
     Args:
@@ -140,9 +151,10 @@ def list_to_tuples(centros_df):
 
     coord_list = [[*map(tuple, row[0])] for row in centros_df["geometry.rings"].values]
     print("[OK] - List of lists successfully converted to list of tuples")
+    logger.debug("[OK] - LIST_TO_TUPLES")
     return coord_list
 
-def rename_df_columns(centros_df):
+def rename_df_columns(centros_df, logger):
     """Removes the word 'attributes' from the Pandas DataFrame's columns.
 
     Args:
@@ -154,9 +166,10 @@ def rename_df_columns(centros_df):
 
     centros_df = centros_df.rename(columns = lambda row: row.lstrip('attributes.'))
     print("[OK] - DataFrame columns successfully renamed")
+    logger.debug("[OK] - RENAME_DF_COLUMNS")
     return centros_df
 
-def json_to_df(json_response):
+def json_to_df(json_response, logger):
     """Transforms the json dictionary to a Pandas DataFrame.
 
     Args:
@@ -167,9 +180,11 @@ def json_to_df(json_response):
     """
     centros_df = pd.json_normalize(json_response['features'])
     print("[OK] - JSON successfully transformed to DataFrame")
+    logger.debug("[OK] - JSON_TO_DF")
+
     return centros_df
 
-def response_to_json(ide_response):
+def response_to_json(ide_response, logger):
     """Transforms the subpesca's request to a python dictionary.
 
     Args:
@@ -181,9 +196,10 @@ def response_to_json(ide_response):
 
     json_response = ide_response.json()
     print("[OK] - IDE rest api service succesfully transformed")
+    logger.debug("[OK] - RESPONSE_TO_JSON")
     return json_response
 
-def get_ide_response(config_data):
+def get_ide_response(config_data, logger):
     """Gets the response of subpesca's rest api service request based on the config data parameters.
 
     Args:
@@ -195,7 +211,24 @@ def get_ide_response(config_data):
 
     ide_response = requests.get(config_data["ide_subpesca"]["request_url"], headers = config_data["ide_subpesca"]["headers"])
     print("[OK] - ArcGIS rest api service succesfully requested")
+    logger.debug("[OK] - GET_IDE_RESPONSE")
     return ide_response
+
+def create_logger(log_file):
+    logging.basicConfig(filename = log_file,
+                    format='%(asctime)s %(message)s',
+                    filemode='w')
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    return logger
+
+def create_log_file(log_path):
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+
+    log_file = log_path + "/ide_subpesca_conector.log"
+    return log_file  
 
 def get_config(filepath=""):
     """Reads the config.json file.
@@ -242,44 +275,50 @@ def main(argv):
     # Get service config parameters
     config_data = get_config(config_filepath)
 
+    # Create the log file if not exists
+    log_file = create_log_file(config_data["log_path"])
+
+    # Create the logger
+    logger = create_logger(log_file)
+
     # Get response from arcgis rest service
-    ide_response = get_ide_response(config_data)
+    ide_response = get_ide_response(config_data, logger)
 
     # Tranform response to dictionary
-    json_response = response_to_json(ide_response)
+    json_response = response_to_json(ide_response, logger)
 
     # Transform dictionary to DataFrame
-    centros_df = json_to_df(json_response)
+    centros_df = json_to_df(json_response, logger)
     
     # Rename DataFrame's columns
-    centros_df = rename_df_columns(centros_df)
+    centros_df = rename_df_columns(centros_df, logger)
 
     # Transform the list of list of coordinates to list of tuples
-    coord_list = list_to_tuples(centros_df)
+    coord_list = list_to_tuples(centros_df, logger)
 
     # Append new column to DataFrame
-    centros_df = polygon_coords_to_df(centros_df, coord_list)
+    centros_df = polygon_coords_to_df(centros_df, coord_list, logger)
 
     # Change format of the geometry column
-    centros_df = transform_geometry_column(centros_df)
+    centros_df = transform_geometry_column(centros_df, logger)
 
     # Drop the old geometry column
-    centros_df = drop_str_geometry(centros_df)
+    centros_df = drop_str_geometry(centros_df, logger)
 
     # Create string with the db mapstore parameters
-    mapstore_connection = create_mapstore_connection(config_data)
+    mapstore_connection = create_mapstore_connection(config_data, logger)
 
     # Create sqlalchemy engine based on the mapstore db paramters
-    mapstore_engine = create_mapstore_engine(mapstore_connection)
+    mapstore_engine = create_mapstore_engine(mapstore_connection, logger)
 
     # Copy the DataFrame to the mapstore database
-    df_to_db(centros_df, config_data, mapstore_engine)
+    df_to_db(centros_df, config_data, mapstore_engine, logger)
 
     # Open the 'add_geometry_centros.sql' file
-    sql_query = open_sql_query()
+    sql_query = open_sql_query(logger)
 
     # Execute the SQL query to transform the geometry type of the new table
-    execute_sql_query(mapstore_engine, sql_query)
+    execute_sql_query(mapstore_engine, sql_query, logger)
 
     end = datetime.now()
 
