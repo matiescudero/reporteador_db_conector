@@ -47,7 +47,7 @@ python reporteador_db_conector.py <config.json path>
 
 ### 3. generate_spatial_outputs.py
 
-Ejecuta un script SQL en la BD Postgres conectada a Geoserver para generar las tablas de salida que están desplegadas en mapstore:
+Ejecuta un script SQL en la BD Postgres conectada a Geoserver para generar las capas espaciales de salida que están desplegadas en mapstore:
 - areas_contingencia
 - areas_psmb
 - centros_acuicultura
