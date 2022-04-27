@@ -215,15 +215,31 @@ def get_ide_response(config_data, logger):
     return ide_response
 
 def create_logger(log_file):
+    """Create a logger based on the passed log file.
+
+    Args:
+        log_file (str): Path of the log file.
+
+    Returns:
+        class logging.RootLogger.
+    """
     logging.basicConfig(filename = log_file,
                     format='%(asctime)s %(message)s',
-                    filemode='w')
+                    filemode='a')
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     return logger
 
 def create_log_file(log_path):
+    """Create the log folder if not exists. Get the log file name.
+
+    Args:
+        log_path (str): Path of the log folder.
+
+    Returns:
+        str
+    """
     if not os.path.exists(log_path):
         os.makedirs(log_path)
 

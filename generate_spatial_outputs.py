@@ -1,11 +1,13 @@
 import sys
 import json
+import os
+import logging
 from sqlalchemy import create_engine
 from sqlalchemy import text
 from datetime import datetime
 
 
-def execute_sql_query(mapstore_engine, sql_query):
+def execute_sql_query(mapstore_engine, sql_query, logger):
     """Execute the 'tables_processing.sql' query on mapstore database.
 
     Args:
@@ -16,9 +18,10 @@ def execute_sql_query(mapstore_engine, sql_query):
     with mapstore_engine.connect().execution_options(autocommit=True) as con:
         con.execute(sql_query)
     print("[OK] - SQL query successfully executed")
+    logger.debug("[OK] - EXECUTE_SQL_QUERY")
 
 
-def open_sql_query():
+def open_sql_query(logger):
     """Open the SQL query to generate the outputs tables on mapstore database.
 
     Returns:
@@ -28,10 +31,11 @@ def open_sql_query():
     with open("./sql_queries/tables_processing.sql", encoding="utf8") as file:
         sql_query = text(file.read())
     print("[OK] - SQL file successfully opened")
+    logger.debug("[OK] - OPEN_SQL_QUERY")
     return sql_query
 
 
-def create_mapstore_engine(mapstore_connection):
+def create_mapstore_engine(mapstore_connection, logger):
     """Create sqlalchemy mapstore engine based on the mapstore connection string.
 
     Args:
@@ -43,10 +47,11 @@ def create_mapstore_engine(mapstore_connection):
 
     mapstore_engine = create_engine(mapstore_connection)
     print("[OK] - SQLAlchemy engine succesfully generated")
+    logger.debug("[OK] - CREATE_MAPSTORE_ENGINE")
     return mapstore_engine
 
 
-def create_mapstore_connection(config_data):
+def create_mapstore_connection(config_data, logger):
     """Create mapstore connection string based on the config file parameters.
 
     Args:
@@ -63,8 +68,40 @@ def create_mapstore_connection(config_data):
         config_data['mapstore']['port'], 
         config_data['mapstore']['db'])
     print("[OK] - Connection string successfully generated")
+    logger.debug("[OK] - CREATE_MAPSTORE_CONNECTION")
     return mapstore_connection 
 
+def create_logger(log_file):
+    """Create a logger based on the passed log file.
+
+    Args:
+        log_file (str): Path of the log file.
+
+    Returns:
+        class logging.RootLogger.
+    """
+    logging.basicConfig(filename = log_file,
+                    format='%(asctime)s %(message)s',
+                    filemode='a')
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    return logger
+
+def create_log_file(log_path):
+    """Create the log folder if not exists. Get the log file name.
+
+    Args:
+        log_path (str): Path of the log folder.
+
+    Returns:
+        str
+    """
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+
+    log_file = log_path + "/generate_spatial_outputs.log"
+    return log_file
 
 def get_config(filepath=""):
     """Reads the config.json file.
@@ -111,17 +148,23 @@ def main(argv):
     # Get dbs config parameters
     config = get_config(config_filepath)
 
+    # Create the log file if not exists
+    log_file = create_log_file(config["log_path"])
+
+    # Create the logger
+    logger = create_logger(log_file)
+
     # Connect to 'mapstore' database
-    mapstore_connection = create_mapstore_connection(config)
+    mapstore_connection = create_mapstore_connection(config, logger)
 
     # Create mapstore's database engine
-    mapstore_engine = create_mapstore_engine(mapstore_connection)
+    mapstore_engine = create_mapstore_engine(mapstore_connection, logger)
 
     # Open the 'tables_processing.sql' file
-    sql_query = open_sql_query()
+    sql_query = open_sql_query(logger)
 
     # Execute the SQL to preprocces the input tables
-    execute_sql_query(mapstore_engine, sql_query)
+    execute_sql_query(mapstore_engine, sql_query, logger)
     
     end = datetime.now()
 
