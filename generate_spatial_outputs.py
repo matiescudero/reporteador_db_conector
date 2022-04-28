@@ -14,11 +14,16 @@ def execute_sql_query(mapstore_engine, sql_query, logger):
         mapstore_engine (sqlalchemy.engine.base.Engine): Mapstore DB sqlalchemy engine.
         sql_query (sqlalchemy.sql.elements.TextClause): 'tables_processing.sql' query
     """
+    try:
+        with mapstore_engine.connect().execution_options(autocommit=True) as con:
+            con.execute(sql_query)
+        print("[OK] - SQL query successfully executed")
+        logger.debug("[OK] - EXECUTE_SQL_QUERY")
 
-    with mapstore_engine.connect().execution_options(autocommit=True) as con:
-        con.execute(sql_query)
-    print("[OK] - SQL query successfully executed")
-    logger.debug("[OK] - EXECUTE_SQL_QUERY")
+    except Exception as e:
+        print('[ERROR] - Executing SQL query')
+        logger.error('[ERROR] - EXECUTE_SQL_QUERY')
+        sys.exit(2)
 
 
 def open_sql_query(logger):
@@ -28,11 +33,17 @@ def open_sql_query(logger):
         sqlalchemy.sql.elements.TextClause
     """
 
-    with open("./sql_queries/tables_processing.sql", encoding="utf8") as file:
-        sql_query = text(file.read())
-    print("[OK] - SQL file successfully opened")
-    logger.debug("[OK] - OPEN_SQL_QUERY")
-    return sql_query
+    try:
+        with open("./sql_queries/tables_processing.sql", encoding="utf8") as file:
+            sql_query = text(file.read())
+        print("[OK] - SQL file successfully opened")
+        logger.debug("[OK] - OPEN_SQL_QUERY")
+        return sql_query
+
+    except Exception as e:
+        print('[ERROR] - Opening SQL Query')
+        logger.error('[ERROR] - OPEN_SQL_QUERY')
+        sys.exit(2)
 
 
 def create_mapstore_engine(mapstore_connection, logger):
@@ -45,10 +56,16 @@ def create_mapstore_engine(mapstore_connection, logger):
         sqlalchemy.engine.base.Engine
     """
 
-    mapstore_engine = create_engine(mapstore_connection)
-    print("[OK] - SQLAlchemy engine succesfully generated")
-    logger.debug("[OK] - CREATE_MAPSTORE_ENGINE")
-    return mapstore_engine
+    try:
+        mapstore_engine = create_engine(mapstore_connection)
+        print("[OK] - SQLAlchemy engine succesfully generated")
+        logger.debug("[OK] - CREATE_MAPSTORE_ENGINE")
+        return mapstore_engine
+
+    except Exception as e:
+        print('[ERROR] - Creating Mapstore Engine')
+        logger.error('[ERROR] - CREATE_ENGINE')
+        sys.exit(2)
 
 
 def create_mapstore_connection(config_data, logger):

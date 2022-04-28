@@ -138,16 +138,22 @@ def connect_reporteador_db(config, logger):
         The 'DRIVER' parameter changes based on the installed ODBC driver.  
     """
 
-    reporteador_connection = pyodbc.connect('DRIVER={SQL Server};SERVER=' + 
-    config['reporteador']['server'] + ';DATABASE=' + 
-    config['reporteador']['db'] +';UID=' + 
-    config['reporteador']['user'] + ';pwd=' + 
-    config['reporteador']['passwd'])
+    try:
+        reporteador_connection = pyodbc.connect('DRIVER={SQL Server};SERVER=' + 
+        config['reporteador']['server'] + ';DATABASE=' + 
+        config['reporteador']['db'] +';UID=' + 
+        config['reporteador']['user'] + ';pwd=' + 
+        config['reporteador']['passwd'])
 
-    print("[OK] - Reporteador database's pyodbc connection successfully generated")
-    logger.debug("[OK] - CONNECT_REPORTEADOR_DB")
+        print("[OK] - Reporteador database's pyodbc connection successfully generated")
+        logger.debug("[OK] - CONNECT_REPORTEADOR_DB")
 
-    return reporteador_connection
+        return reporteador_connection
+
+    except Exception as e:
+        print('[ERROR] - Connecting DB')
+        logger.error('[ERROR] - CONNECT_REPORTEADOR_BD')
+        sys.exit(2)
 
 def create_logger(log_file):
     """Create a logger based on the passed log file.
