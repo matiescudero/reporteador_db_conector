@@ -257,14 +257,14 @@ SET dif_tox = resultado - lim_tox;
 -- Para cada área se selecciona únicamente aquel registro que más se acerque al límite tóxico de cada toxina.
 
 CREATE TEMP TABLE causal_area AS
-(SELECT MAX_tox.*, CASE WHEN (dif_tox > 0) THEN grupo
-					   WHEN (dif_tox < 0 AND resultado > lim_cont) THEN grupo
+(SELECT max_tox.*, CASE WHEN (dif_tox > 0) THEN nm_toxina
+					   WHEN (dif_tox < 0 AND resultado > lim_cont) THEN nm_toxina
 					   ELSE ' ' END AS causal
 FROM (SELECT DISTINCT ON (cod_area)
-cod_area, grupo, cod_centro, lim_cont, lim_tox, resultado, dif_tox
+cod_area, grupo, nm_toxina, cod_centro, lim_cont, lim_tox, resultado, dif_tox
 FROM tox_est
 WHERE n_accion > 1
-ORDER BY cod_area, dif_tox DESC) as MAX_tox);
+ORDER BY cod_area, dif_tox DESC) as max_tox);
 
 -- Se 'pivotean' los resultados para cada toxina y se agrupar por estación
 
@@ -327,10 +327,10 @@ FROM (SELECT piv.cod_area,
 	   MAX(fecha_vpm) as fecha_aza,
 	   MAX(n_accion) as n_accion,
 	   causal.causal
-FROM pivot_est as piv
-LEFT JOIN causal_area as causal
-ON piv.cod_area = causal.cod_area
-GROUP BY piv.cod_area, causal.causal) as areas
+	   FROM pivot_est as piv
+ 	   LEFT JOIN causal_area as causal
+	   ON piv.cod_area = causal.cod_area
+	   GROUP BY piv.cod_area, causal.causal) as areas
 RIGHT JOIN capas_estaticas.areas_psmb as shp
 ON shp.codigoarea = areas.cod_area);
 
