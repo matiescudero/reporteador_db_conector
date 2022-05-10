@@ -12,11 +12,11 @@ from datetime import datetime
 
 
 def execute_sql_query(mapstore_engine, sql_query, logger):
-    """Execute the 'add_geometry_centros.sql' query on mapstore database.
+    """Execute the 'add_geometry_to_services.sql' query on mapstore database.
 
     Args:
         mapstore_engine (sqlalchemy.engine.base.Engine): Mapstore DB sqlalchemy engine.
-        sql_query (sqlalchemy.sql.elements.TextClause): 'add_geometry_centros.sql' query
+        sql_query (sqlalchemy.sql.elements.TextClause): 'add_geometry_to_services.sql' query
     """
 
     with mapstore_engine.connect().execution_options(autocommit=True) as con:
@@ -25,13 +25,13 @@ def execute_sql_query(mapstore_engine, sql_query, logger):
     logger.debug("[OK] - EXECUTE_SQL_QUERY")
 
 def open_sql_query(logger):
-    """Open the SQL query to add the geometry type to the 'centros_acuicultura' table on mapstore database.
+    """Open the SQL query to add the geometry type to the IDE tables on mapstore database.
 
     Returns:
         sqlalchemy.sql.elements.TextClause
     """
 
-    with open("./sql_queries/add_geometry_centros.sql") as file:
+    with open("./sql_queries/add_geometry_to_services.sql") as file:
         sql_query = text(file.read())
     print("[OK] - SQL file successfully opened")
     logger.debug("[OK] - OPEN_SQL_QUERY")
@@ -369,10 +369,10 @@ def main(argv):
     df_to_db(amerb_df, config_data, mapstore_engine, "amerb", logger)
     df_to_db(acuiamerb_df, config_data, mapstore_engine, "acuiamerb", logger)
 
-    # Open the 'add_geometry_centros.sql' file
+    # Open the 'add_geometry_to_services.sql' file
     sql_query = open_sql_query(logger)
 
-    # Execute the SQL query to transform the geometry type of the new table
+    # Execute the SQL query to transform the geometry type of the new tables
     execute_sql_query(mapstore_engine, sql_query, logger)
 
     end = datetime.now()
