@@ -59,7 +59,7 @@ def df_to_db(df, config_data, mapstore_engine, table_name, logger):
                 schema = config_data['mapstore']['schema'], 
                 index = False)
 
-    print("[OK] - " + table_name + " DataFrame successfully copied to Mapstore database")
+    print("[OK] - " + table_name + " dataframe successfully copied to Mapstore database")
     logger.debug("[OK] - " + table_name.upper() + " DF_TO_DB")
 
 def create_mapstore_engine(mapstore_connection, logger):
