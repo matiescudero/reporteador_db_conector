@@ -177,10 +177,13 @@ WHERE shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.REGION" = 'REGIÓN DE 
 -------------------------------------
 
 ----------------------------------------------------
--- /* 2.1 Áreas según valores toxicológicos --------
+-- /* 2.1 Procesamiento tabla toxicológica ---------
 ----------------------------------------------------
 
 /* Se une la información de grupo de toxinas y sus respectivos límites */
+
+-- Tabla con todas las columnas de 'gestio_sp' más las columnas de 'grupos_toxinas'
+-- y 'limites_toxicologicos'
 
 CREATE TEMP TABLE ult_pos AS(
 	SELECT tox_grup.*, lim.tipo, lim.nm_toxina, lim.lim_cont, lim.lim_tox 
@@ -193,20 +196,24 @@ CREATE TEMP TABLE ult_pos AS(
 
 /* Se genera un ID único para cada estación, estación - grupo de toxinas y estación - análisis */
 
--- Se añanden las columnas que almacenan los nuevos id's
+-- Se añanden las columnas que van a almacenar los nuevos id's
 
 ALTER TABLE ult_pos
 ADD COLUMN cod_estacion varchar(50),
 ADD COLUMN cod_estacion_grupo varchar(70),
 ADD COLUMN cod_estacion_analisis varchar(100);
 
--- Se concatenan los 'códigos'
+-- Se concatenan los distintos id's
 
 UPDATE ult_pos
 SET cod_estacion = "Còd. Centro Cultivo" || '-' || "Estación Monitoreo",
 	cod_estacion_grupo = "Còd. Centro Cultivo" || '-' || "Estación Monitoreo" || '-' || grupo,
 	cod_estacion_analisis = "Còd. Centro Cultivo" || '-' || "Estación Monitoreo" || '-' || "Análisis";
-	
+
+---------------------------------------------------------
+-- /* 2.2 Información toxicológica en áreas PSMB --------
+---------------------------------------------------------
+
 /* Se suman los análisis específicos para cada estación, según el grupo al que pertenezcan */
 
 -- Se deja únicamente el último registro para cada toxina perteneciente a cada estación
@@ -338,15 +345,19 @@ ON shp.codigoarea = areas.cod_area);
 
 ALTER TABLE capas_estaticas.areas_contingencia
 ADD COLUMN accion varchar(80),
-ADD COLUMN msje varchar(100); 
+ADD COLUMN msje varchar(100),
+ADD COLUMN pre_causal varchar(100);
 
 UPDATE capas_estaticas.areas_contingencia
-SET accion = CASE WHEN n_accion = 3 THEN 'Cerrada'
-				  WHEN n_accion = 2 THEN 'Abierta con monitoreo intensivo'
-				  ELSE 'Abierta con monitoreo normal' END,
-	msje = CASE WHEN n_accion = 3 THEN 'debido a la abundante presencia de'
-				WHEN n_accion = 2 THEN 'debido a la presencia de'
-				ELSE ', no hay presencia de toxinas' END;
+SET accion = CASE WHEN n_accion = 3 THEN 'valores tóxicos'
+				  WHEN n_accion = 2 THEN 'valores subtóxicos'
+				  ELSE 'sin presencia de toxinas' END,
+	msje = CASE WHEN n_accion = 3 THEN 'registra presencia de'
+				WHEN n_accion = 2 THEN 'registra presencia de'
+				ELSE 'se encuentra' END,
+	pre_causal = CASE WHEN n_accion = 3 THEN 'de'
+				      WHEN n_accion = 2 THEN 'de'
+				 	  ELSE '' END;
 
 -- Se eliminan las columnas que no sirven
 
