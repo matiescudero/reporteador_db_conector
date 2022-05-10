@@ -38,7 +38,7 @@ def open_sql_query(logger):
     return sql_query
  
 def df_to_db(df, config_data, mapstore_engine, table_name, logger):
-    """Copy the centros_df DataFrame to the mapstore database.
+    """Copy the IDE DataFrames to the mapstore database.
 
     Args:
         df (pandas.core.frame.DataFrame): Dataframe from IDE service.
@@ -56,7 +56,7 @@ def df_to_db(df, config_data, mapstore_engine, table_name, logger):
                 schema = config_data['mapstore']['schema'], 
                 index = False)
 
-    print("[OK] - " + table_name + " successfully copied to Mapstore database")
+    print("[OK] - " + table_name + " DataFrame successfully copied to Mapstore database")
     logger.debug("[OK] - " + table_name.upper() + " DF_TO_DB")
 
 def create_mapstore_engine(mapstore_connection, logger):
