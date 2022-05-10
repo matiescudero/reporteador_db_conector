@@ -37,26 +37,27 @@ def open_sql_query(logger):
     logger.debug("[OK] - OPEN_SQL_QUERY")
     return sql_query
  
-def df_to_db(centros_df, config_data, mapstore_engine, logger):
+def df_to_db(df, config_data, mapstore_engine, table_name, logger):
     """Copy the centros_df DataFrame to the mapstore database.
 
     Args:
-        centros_df (pandas.core.frame.DataFrame): Dataframe with all the farming centers.
+        df (pandas.core.frame.DataFrame): Dataframe from IDE service.
         config_data (dict): config.json parameters.
         mapstore_engine (sqlalchemy.engine.base.Engine): Mapstore DB sqlalchemy engine.
+        table_name (str): Name of the output table on the mapstore's database.
     
     Raises:
         SAWarning: Did not recognize type 'geometry' of column 'geom'
     """
 
-    centros_df.to_sql('concesiones_acuicultura', 
-                        mapstore_engine, 
-                        if_exists = 'replace', 
-                        schema = config_data['mapstore']['schema'], 
-                        index = False)
+    df.to_sql(table_name, 
+                mapstore_engine, 
+                if_exists = 'replace', 
+                schema = config_data['mapstore']['schema'], 
+                index = False)
 
-    print("[OK] - DataFrame successfully copied to Mapstore database")
-    logger.debug("[OK] - DF_TO_DB")
+    print("[OK] - " + table_name + " successfully copied to Mapstore database")
+    logger.debug("[OK] - " + table_name.upper() + " DF_TO_DB")
 
 def create_mapstore_engine(mapstore_connection, logger):
     """Create sqlalchemy mapstore engine based on the mapstore connection string.
@@ -93,81 +94,81 @@ def create_mapstore_connection(config_data, logger):
     logger.debug("[OK] - CREATE_MAPSTORE_CONNECTION")
     return mapstore_connection   
 
-def drop_str_geometry(centros_df, logger):
+def drop_str_geometry(df, logger):
     """Drop the previous geometry column.
 
     Args:
-        centros_df (pandas.core.frame.DataFrame): Dataframe with all the farming centers.
+        df (pandas.core.frame.DataFrame): Dataframe from IDE service.
 
     Returns:
         pandas.core.frame.DataFrame
     """
 
-    centros_df.drop('geometry.rings', axis=1, inplace=True)
+    df.drop('geometry.rings', axis=1, inplace=True)
     print("[OK] - Old geometry column successfully dropped")
     logger.debug("[OK] - DROP_STR_GEOMETRY")
-    return centros_df
+    return df
 
-def transform_geometry_column(centros_df, logger):
+def transform_geometry_column(df, logger):
     """Transform the geometry column to a SQL readable format.
 
     Args:
-        centros_df (pandas.core.frame.DataFrame): Dataframe with all the farming centers.
+        df (pandas.core.frame.DataFrame): Dataframe from IDE service.
 
     Returns:
         pandas.core.frame.DataFrame
     """
 
-    centros_df["geometry"] = centros_df["geometry"].apply(Polygon).apply(str)
+    df["geometry"] = df["geometry"].apply(Polygon).apply(str)
     print("[OK] - Geometry column format successfully converted")
     logger.debug("[OK] - TRANSFORM GEOMETRY COLUMN")
-    return centros_df
+    return df
 
-def polygon_coords_to_df(centros_df, coord_list, logger):
+def polygon_coords_to_df(df, coord_list, logger):
     """Appends the list of coordinates to the centros_df DataFrame as a column.
 
     Args:
-        centros_df (pandas.core.frame.DataFrame): Dataframe with all the farming centers.
+        df (pandas.core.frame.DataFrame): Dataframe from IDE service.
         coord_list (list): list of lists with the coodinates of each farming center.
 
     Returns:
         pandas.core.frame.DataFrame
     """
 
-    centros_df["geometry"] = coord_list
+    df["geometry"] = coord_list
     print("[OK] - New geometry column successfully appended")
     logger.debug("[OK] - POLYGON_COORDS_TO_DF")
-    return centros_df
+    return df
 
-def list_to_tuples(centros_df, logger):
+def list_to_tuples(df, logger):
     """Transforms the "geometry.rings" column from list of lists to a list of tuples. 
 
     Args:
-        centros_df (pandas.core.frame.DataFrame): Dataframe with all the farming centers.
+        df (pandas.core.frame.DataFrame): Dataframe from IDE service.
 
     Returns:
         list.
     """
 
-    coord_list = [[*map(tuple, row[0])] for row in centros_df["geometry.rings"].values]
+    coord_list = [[*map(tuple, row[0])] for row in df["geometry.rings"].values]
     print("[OK] - List of lists successfully converted to list of tuples")
     logger.debug("[OK] - LIST_TO_TUPLES")
     return coord_list
 
-def rename_df_columns(centros_df, logger):
+def rename_df_columns(df, logger):
     """Removes the word 'attributes' from the Pandas DataFrame's columns.
 
     Args:
-        centros_df (pandas.core.frame.DataFrame): Dataframe with all the farming centers.
+        df (pandas.core.frame.DataFrame): Dataframe from IDE service.
 
     Returns:
         pandas.core.frame.DataFrame.
     """
 
-    centros_df = centros_df.rename(columns = lambda row: row.lstrip('attributes.'))
+    df = df.rename(columns = lambda row: row.lstrip('attributes.'))
     print("[OK] - DataFrame columns successfully renamed")
     logger.debug("[OK] - RENAME_DF_COLUMNS")
-    return centros_df
+    return df
 
 def json_to_df(json_response, logger):
     """Transforms the json dictionary to a Pandas DataFrame.
@@ -178,11 +179,11 @@ def json_to_df(json_response, logger):
     Returns:
         pandas.core.frame.DataFrame.
     """
-    centros_df = pd.json_normalize(json_response['features'])
+    df = pd.json_normalize(json_response['features'])
     print("[OK] - JSON successfully transformed to DataFrame")
     logger.debug("[OK] - JSON_TO_DF")
 
-    return centros_df
+    return df
 
 def response_to_json(ide_response, logger):
     """Transforms the subpesca's request to a python dictionary.
@@ -199,19 +200,20 @@ def response_to_json(ide_response, logger):
     logger.debug("[OK] - RESPONSE_TO_JSON")
     return json_response
 
-def get_ide_response(config_data, logger):
+def get_ide_response(config_data, service, logger):
     """Gets the response of subpesca's rest api service request based on the config data parameters.
 
     Args:
         config_data (dict): config.json parameters.
+        service (str) : name of the arcgis service on the local config file.
 
     Returns:
         requests.models.Response.
     """
 
-    ide_response = requests.get(config_data["ide_subpesca"]["request_url"], headers = config_data["ide_subpesca"]["headers"])
-    print("[OK] - ArcGIS rest api service succesfully requested")
-    logger.debug("[OK] - GET_IDE_RESPONSE")
+    ide_response = requests.get(config_data["ide_subpesca"]["request_url"][service], headers = config_data["ide_subpesca"]["headers"])
+    print("[OK] - ArcGIS rest API " + service + " service succesfully requested")
+    logger.debug("[OK] - GET_IDE_RESPONSE FROM " + service.upper() + " SERVICE")
     return ide_response
 
 def create_logger(log_file):
@@ -297,29 +299,62 @@ def main(argv):
     # Create the logger
     logger = create_logger(log_file)
 
-    # Get response from arcgis rest service
-    ide_response = get_ide_response(config_data, logger)
+    # Get responses from arcgis rest services
+    centros_response = get_ide_response(config_data, "centros", logger)
+    areas_response = get_ide_response(config_data, "areas_colecta", logger)
+    ecmpo_response = get_ide_response(config_data, "ecmpo", logger)
+    amerb_response = get_ide_response(config_data, "amerb", logger)
+    acuiamerb_response = get_ide_response(config_data, "acui_en_amerb", logger)
 
-    # Tranform response to dictionary
-    json_response = response_to_json(ide_response, logger)
 
-    # Transform dictionary to DataFrame
-    centros_df = json_to_df(json_response, logger)
+    # Tranform responses to dictionary
+    centros_json = response_to_json(centros_response, logger)
+    areas_json = response_to_json(areas_response, logger)
+    ecmpo_json = response_to_json(ecmpo_response, logger)
+    amerb_json = response_to_json(amerb_response, logger)
+    acuiamerb_json = response_to_json(acuiamerb_response, logger)
+
+    # Transform dictionarys to DataFrames
+    centros_df = json_to_df(centros_json, logger)
+    areas_df = json_to_df(areas_json, logger)
+    ecmpo_df = json_to_df(ecmpo_json, logger)
+    amerb_df = json_to_df(amerb_json, logger)
+    acuiamerb_df = json_to_df(acuiamerb_json, logger)
     
     # Rename DataFrame's columns
     centros_df = rename_df_columns(centros_df, logger)
+    areas_df = rename_df_columns(areas_df, logger)
+    ecmpo_df = rename_df_columns(ecmpo_df, logger)
+    amerb_df = rename_df_columns(amerb_df, logger)
+    acuiamerb_df = rename_df_columns(acuiamerb_df, logger)
 
     # Transform the list of list of coordinates to list of tuples
-    coord_list = list_to_tuples(centros_df, logger)
+    centros_df_coord_list = list_to_tuples(centros_df, logger)
+    areas_df_coord_list = list_to_tuples(areas_df, logger)
+    ecmpo_df_coord_list = list_to_tuples(ecmpo_df, logger)
+    amerb_df_coord_list = list_to_tuples(amerb_df, logger)
+    acuiamerb_coord_list = list_to_tuples(acuiamerb_df, logger)
 
     # Append new column to DataFrame
-    centros_df = polygon_coords_to_df(centros_df, coord_list, logger)
+    centros_df = polygon_coords_to_df(centros_df, centros_df_coord_list, logger)
+    areas_df = polygon_coords_to_df(areas_df, areas_df_coord_list, logger)
+    ecmpo_df = polygon_coords_to_df(ecmpo_df, ecmpo_df_coord_list, logger)
+    amerb_df = polygon_coords_to_df(amerb_df, amerb_df_coord_list, logger)
+    acuiamerb_df = polygon_coords_to_df(acuiamerb_df, acuiamerb_coord_list, logger)
 
     # Change format of the geometry column
     centros_df = transform_geometry_column(centros_df, logger)
+    areas_df = transform_geometry_column(areas_df, logger)
+    ecmpo_df = transform_geometry_column(ecmpo_df, logger)
+    amerb_df = transform_geometry_column(amerb_df, logger)
+    acuiamerb_df = transform_geometry_column(acuiamerb_df, logger)
 
     # Drop the old geometry column
     centros_df = drop_str_geometry(centros_df, logger)
+    areas_df = drop_str_geometry(areas_df, logger)
+    ecmpo_df = drop_str_geometry(ecmpo_df, logger)
+    amerb_df = drop_str_geometry(amerb_df, logger)
+    acuiamerb_df = drop_str_geometry(acuiamerb_df, logger)
 
     # Create string with the db mapstore parameters
     mapstore_connection = create_mapstore_connection(config_data, logger)
@@ -328,7 +363,11 @@ def main(argv):
     mapstore_engine = create_mapstore_engine(mapstore_connection, logger)
 
     # Copy the DataFrame to the mapstore database
-    df_to_db(centros_df, config_data, mapstore_engine, logger)
+    df_to_db(centros_df, config_data, mapstore_engine, "concesiones_acuicultura", logger)
+    df_to_db(areas_df, config_data, mapstore_engine, "areas_colecta", logger)
+    df_to_db(ecmpo_df, config_data, mapstore_engine, "ecmpo", logger)
+    df_to_db(amerb_df, config_data, mapstore_engine, "amerb", logger)
+    df_to_db(acuiamerb_df, config_data, mapstore_engine, "acuiamerb", logger)
 
     # Open the 'add_geometry_centros.sql' file
     sql_query = open_sql_query(logger)
@@ -338,7 +377,7 @@ def main(argv):
 
     end = datetime.now()
 
-    print(f"[OK] - Table successfully copied to mapstore's database. Time elapsed: {end - start}")
+    print(f"[OK] - Tables successfully copied to mapstore's database. Time elapsed: {end - start}")
 
 if __name__ == "__main__":
     main(sys.argv)
