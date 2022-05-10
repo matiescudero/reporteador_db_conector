@@ -12,11 +12,11 @@ from datetime import datetime
 
 
 def execute_sql_query(mapstore_engine, sql_query, logger):
-    """Execute the 'add_geometry_to_services.sql' query on mapstore database.
+    """Execute the given sql query on mapstore database.
 
     Args:
         mapstore_engine (sqlalchemy.engine.base.Engine): Mapstore DB sqlalchemy engine.
-        sql_query (sqlalchemy.sql.elements.TextClause): 'add_geometry_to_services.sql' query
+        sql_query (sqlalchemy.sql.elements.TextClause): SQL file query
     """
 
     with mapstore_engine.connect().execution_options(autocommit=True) as con:
@@ -24,17 +24,20 @@ def execute_sql_query(mapstore_engine, sql_query, logger):
     print("[OK] - SQL query successfully executed")
     logger.debug("[OK] - EXECUTE_SQL_QUERY")
 
-def open_sql_query(logger):
+def open_sql_query(sql_file, logger):
     """Open the SQL query to add the geometry type to the IDE tables on mapstore database.
+
+    Args:
+        sql_file (str): Name of the .sql file to execute
 
     Returns:
         sqlalchemy.sql.elements.TextClause
     """
 
-    with open("./sql_queries/add_geometry_to_services.sql") as file:
+    with open("./sql_queries/" + sql_file) as file:
         sql_query = text(file.read())
-    print("[OK] - SQL file successfully opened")
-    logger.debug("[OK] - OPEN_SQL_QUERY")
+    print("[OK] - " + sql_file + " SQL file successfully opened")
+    logger.debug("[OK] - " + sql_file.upper() + " OPEN_SQL_QUERY")
     return sql_query
  
 def df_to_db(df, config_data, mapstore_engine, table_name, logger):
@@ -370,10 +373,16 @@ def main(argv):
     df_to_db(acuiamerb_df, config_data, mapstore_engine, "acuiamerb", logger)
 
     # Open the 'add_geometry_to_services.sql' file
-    sql_query = open_sql_query(logger)
+    geom_sql_query = open_sql_query("add_geometry_to_services.sql", logger)
 
     # Execute the SQL query to transform the geometry type of the new tables
-    execute_sql_query(mapstore_engine, sql_query, logger)
+    execute_sql_query(mapstore_engine, geom_sql_query, logger)
+
+    # Open the 'ide_layers_processing.sql' file
+    ide_process_sql_query = open_sql_query("ide_layers_processing.sql", logger)
+
+    # Execute the SQL query to change the column names of the IDE tables
+    execute_sql_query(mapstore_engine, ide_process_sql_query, logger)
 
     end = datetime.now()
 
