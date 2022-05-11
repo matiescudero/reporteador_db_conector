@@ -34,7 +34,7 @@ def open_sql_query(sql_file, logger):
         sqlalchemy.sql.elements.TextClause
     """
 
-    with open("./sql_queries/" + sql_file) as file:
+    with open("./sql_queries/" + sql_file, encoding = "utf8") as file:
         sql_query = text(file.read())
     print("[OK] - " + sql_file + " SQL file successfully opened")
     logger.debug("[OK] - " + sql_file.upper() + " OPEN_SQL_QUERY")
