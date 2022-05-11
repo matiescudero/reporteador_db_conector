@@ -78,9 +78,9 @@ FROM entradas.amerb);
 -- /* 4. Acuicultura en AMERB */ --
 -----------------------------------
 
-DROP TABLE IF EXISTS capas_estaticas.amerb;
+DROP TABLE IF EXISTS capas_estaticas.acuiamerb;
 
-CREATE TABLE capas_estaticas.amerb AS
+CREATE TABLE capas_estaticas.acuiamerb AS
 (SELECT "REP_SUBPESCA2.ADM_UOT.ACUI_SSP_T_ACUICULTURAAMERB.TITULAR" titular,
 		geom,
 		"REP_SUBPESCA2.ADM_UOT.ACUI_SSP_T_ACUICULTURAAMERB.C_TIPOACUIAME" tipo_actividad,
