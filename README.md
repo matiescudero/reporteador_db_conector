@@ -18,7 +18,17 @@ flowchart TD
 
 ### 1. ide_subpesca_conector.py
 
-Extrae la capa espacial de centros de cultivo proveniente de un servicio de mapas mediante la API REST de ArcGIS Server. Esta capa es procesada y almacenada en la BD Postgres conectada a Geoserver. Se ejecuta sólo en caso de querer actualizar la información base a desplegar en Mapstore.
+Extrae las capa espaciales provenientes de servicios de mapas mediante la API REST de ArcGIS Server:
+
+- [Concesiones de Acuicultura por estado de trámite](https://geoportal.subpesca.cl/server/rest/services/IDE_PUBLICO/SRMPUB_ACUICULTURA/MapServer/0)
+- [Acuicultura en AMERB](https://geoportal.subpesca.cl/server/rest/services/IDE_PUBLICO/SRMPUB_ACUIAMERB/MapServer/0)
+- [AMERB](https://geoportal.subpesca.cl/server/rest/services/TESTING/SRMTEST_AMERB/MapServer/0)
+- [Áreas de Colecta](https://geoportal.subpesca.cl/server/rest/services/IDE_INTERNO/SRMINT_AREASDECOLECTA/MapServer/0)
+- [ECMPO](https://geoportal.subpesca.cl/server/rest/services/IDE_PUBLICO/SRMPUB_ECMPO/MapServer/0)
+
+Estas capas son procesadas mediante python y SQL y posteriormente son almacenadas en la BD Postgres conectada a Geoserver. 
+
+**Se ejecuta sólo en caso de querer actualizar la información base a desplegar en Mapstore.**
 
 Para ejecutar se ingresa cómo parámetro:
 
@@ -29,6 +39,7 @@ python ide_subpesca_conector.py <config.json path>
 ### 2. reporteador_db_conector.py
 
 Genera una conexión a la la BD SQL Server de SERNAPESCA y ejecuta procedimientos almacenados para extraer las tablas:
+
 - Existencias Moluscos
 - Existencias Salmónidos
 - Áreas PSMB
@@ -48,6 +59,7 @@ python reporteador_db_conector.py <config.json path>
 ### 3. generate_spatial_outputs.py
 
 Ejecuta un script SQL en la BD Postgres conectada a Geoserver para generar las capas espaciales de salida que están desplegadas en mapstore:
+
 - areas_contingencia
 - areas_psmb
 - centros_acuicultura
