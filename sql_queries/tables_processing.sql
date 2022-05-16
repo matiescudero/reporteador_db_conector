@@ -20,25 +20,31 @@ y se reproyecta al SRID 4326. Se establece además si estos son centros son PSMB
 DROP TABLE IF EXISTS capas_estaticas.centros_acuicultura;
 
 CREATE TABLE capas_estaticas.centros_acuicultura AS (SELECT shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.N_CODIGOCENTRO" as codigocentro,
-										  centros."Código Área" AS codigoarea,
-										  shp.geom AS geom,
-										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.TITULAR" AS titular,
-										  centros."Nombre Sector" AS nombresector,
-										  centros."Estado" AS estado_area,
-										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.ESPECIES" AS especies,
-										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.TOPONIMIO" AS toponimio,
-										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_ESTADOTRAMITE" AS t_estadotramite,
-										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.F_RESOLSSP" AS f_resolucion,
-										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_GRUPOESPECIE" AS t_grupoespecie,
-										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.C_TIPOPORCION" AS c_tipoporcion,
-										  shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.SUPERFICIETOTAL" AS superficie
+									 centros."Código Área" AS codigoarea,
+									 shp.geom AS geom,
+									 shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.TITULAR" AS titular,
+									 centros."Nombre Sector" AS area_psmb,
+									 centros."Estado" AS estado_area,
+									 shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.ESPECIES" AS especies,
+									 shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.TOPONIMIO" AS toponimio,
+									 shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_ESTADOTRAMITE" AS t_estadotramite,
+									 shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.F_RESOLSSP" AS f_resolucion,
+									 shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_GRUPOESPECIE" AS t_grupoespecie,
+									     CASE 
+											 WHEN (shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.C_TIPOPORCION" = 0) THEN 'NO ESPECIFICADA'
+											 WHEN (shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.C_TIPOPORCION" = 1) THEN 'AGUA Y FONDO'
+											 WHEN (shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.C_TIPOPORCION" = 2) THEN 'PLAYA'
+											 WHEN (shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.C_TIPOPORCION" = 3) THEN 'ROCA'
+											 WHEN (shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.C_TIPOPORCION" = 4) THEN 'TERRENO DE PLAYA'
+											 END AS c_tipoporcion,
+									 shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.SUPERFICIETOTAL" AS superficie
 FROM entradas.concesiones_acuicultura AS shp
 LEFT JOIN entradas.centros_psmb AS centros
 ON shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.N_CODIGOCENTRO" = centros."Código Centro"
 WHERE shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.REGION" = 'REGIÓN DE LOS LAGOS' AND
-											(shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_GRUPOESPECIE" = 'MOLUSCOS' OR
-											shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_GRUPOESPECIE" = 'ABALONES o EQUINODERMOS') AND
-											 shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_ESTADOTRAMITE" = 'CONCESION OTORGADA');
+										(shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_GRUPOESPECIE" = 'MOLUSCOS' OR
+										shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_GRUPOESPECIE" = 'ABALONES o EQUINODERMOS') AND
+										shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_ESTADOTRAMITE" = 'CONCESION OTORGADA');
 
 /* Se añade columna que indica si el centro es PSMB o no*/
 ALTER TABLE capas_estaticas.centros_acuicultura ADD COLUMN psmb varchar(5);
@@ -71,6 +77,14 @@ CREATE TABLE capas_estaticas.centros_no_psmb AS
 (SELECT * FROM capas_estaticas.centros_acuicultura 
 WHERE psmb = 'No');
 
+/* Se eliminan las columnas de estado psmb de estas capas */
+
+ALTER TABLE capas_estaticas.centros_psmb
+DROP COLUMN psmb;
+
+ALTER TABLE capas_estaticas.centros_no_psmb
+DROP COLUMN psmb;
+
 ----------------------------
 -- /* 1.3 Áreas PSMB */ ----
 ----------------------------
@@ -85,7 +99,7 @@ CREATE TABLE capas_estaticas.areas_psmb AS
         areas."Nombre Área" as nombrearea,
         areas."Delimitación" as delim, 
         COUNT(DISTINCT centros.codigocentro) as n_centros,
-        centros.estado_area, 
+        centros.estado_area AS estado_psmb, 
         areas."Fecha Estado Área" as fecha_est
 FROM capas_estaticas.centros_psmb as centros
 INNER JOIN entradas.areas_psmb as areas
@@ -365,7 +379,7 @@ ALTER TABLE capas_estaticas.areas_contingencia
 DROP COLUMN cod_area, 
 DROP COLUMN n_accion;
 
--- Capa que incluye el centroide del centro de la estación que  
+-- Capa que incluye el centroide del centro de la estación que registra valores toxicológicos elevados 
 
 DROP TABLE IF EXISTS capas_estaticas.centro_causal;
 
