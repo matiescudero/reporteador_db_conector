@@ -255,8 +255,9 @@ ON ult_pos.cod_estacion_analisis = fech_tox.cod_estacion_analisis AND fech_tox.f
 -- Además, se genera una columna con la acción asignada para cada toxina, de acuerdo a los límites preestablecidos
 
 CREATE TEMP TABLE tox_est AS
-(SELECT *, CASE WHEN resultado > lim_tox THEN 3
-     WHEN (resultado > lim_cont AND resultado < lim_tox) THEN 2
+(SELECT *, CASE 
+ 	WHEN resultado > lim_tox THEN 3
+    WHEN (resultado > lim_cont AND resultado < lim_tox) THEN 2
 	 ELSE 1 END AS n_accion
 FROM (SELECT MAX(fechaext) as fechaext, cod_estacion,  cod_estacion_grupo,
 	   estacion, grupo, cod_area, n_area, cod_centro, tipo, nm_toxina,
@@ -332,7 +333,7 @@ GROUP BY cod_estacion, estacion, cod_area, cod_centro);
 DROP TABLE IF EXISTS capas_estaticas.areas_contingencia;
 
 CREATE TABLE capas_estaticas.areas_contingencia AS
-(SELECT shp.geom, shp.codigoarea, shp.nombrearea, areas.*, shp.n_centros, shp.estado_area, shp.fecha_est 
+(SELECT shp.geom, shp.codigoarea, shp.nombrearea, areas.*, shp.n_centros, shp.estado_psmb, shp.fecha_est 
 FROM (SELECT piv.cod_area,
 	   MAX(res_vpm) as res_vpm,
 	   MAX(fecha_vpm) as fecha_vpm,
