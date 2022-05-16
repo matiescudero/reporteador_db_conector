@@ -63,7 +63,7 @@ CREATE TABLE capas_estaticas.areas_colecta AS
  			 ELSE 'SIN INFORMACIÓN'
  			 END AS estado,
 		 "REP_SUBPESCA2.ADM_UOT.ACUI_SSPA_T_AREACOLECTA.N_DECSSFFAA" n_decreto,
-		 timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_UOT.ACUI_SSPA_T_AREACOLECTA.F_DECSSFFAA"/1000)) f_decreto
+		 to_char(timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_UOT.ACUI_SSPA_T_AREACOLECTA.F_DECSSFFAA"/1000)), 'YYYY') f_decreto
 FROM entradas.areas_colecta
 WHERE "REP_SUBPESCA2.ADM_UOT.ACUI_SSPA_T_AREACOLECTA.COD_REGION" = 10);
 
@@ -82,14 +82,14 @@ CREATE TABLE capas_estaticas.ecmpo AS
 		 "REP_SUBPESCA2.ADM_UAI.AIND_SSP_T_ECMPO.NATURALEZASECTOR" naturaleza,
 		 "REP_SUBPESCA2.ADM_UAI.AIND_SSP_T_ECMPO.C_ESTADOECMPO" estado,
 		 "REP_SUBPESCA2.ADM_UAI.AIND_SSP_T_ECMPO.N_INGRESOCI" n_ingreso,
-		 timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_UAI.AIND_SSP_T_ECMPO.F_INGRESOCI"/1000)) f_ingreso,
-		 timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_UAI.AIND_SSP_T_ECMPO.F_APRUEBAPLANADM"/1000)) f_aprob,
+		 to_char(timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_UAI.AIND_SSP_T_ECMPO.F_INGRESOCI"/1000)), 'DD-MM-YYYY') f_ingreso,
+		 to_char(timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_UAI.AIND_SSP_T_ECMPO.F_APRUEBAPLANADM"/1000)), 'DD-MM-YYYY') f_aprob,
 		 "REP_SUBPESCA2.ADM_UAI.AIND_SSP_T_ECMPO.COMUNA" comuna,
 		 "REP_SUBPESCA2.ADM_UAI.AIND_SSP_PO_ECMPO.OBJECTID" objectid,
 		 "REP_SUBPESCA2.ADM_UAI.AIND_SSP_T_ECMPO.SUPERFICIE" superficie,
 		 "REP_SUBPESCA2.ADM_UAI.AIND_SSP_T_ECMPO.ES_ACTIVO" activo,
 		 "REP_SUBPESCA2.ADM_UAI.AIND_SSP_T_ECMPO.N_DECRETOMINDEF" n_decreto,
-		 timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_UAI.AIND_SSP_T_ECMPO.F_DECRETOMINDEF"/1000)) f_decreto
+		 to_char(timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_UAI.AIND_SSP_T_ECMPO.F_DECRETOMINDEF"/1000)), 'YYYY') f_decreto
 FROM entradas.ecmpo);
 
 
@@ -99,7 +99,7 @@ FROM entradas.ecmpo);
 DROP TABLE IF EXISTS capas_estaticas.amerb;
 
 CREATE TABLE capas_estaticas.amerb AS 
-(SELECT timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.F_ING_SSP"/1000)) fecha_ing,
+(SELECT to_char(timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.F_ING_SSP"/1000)), 'DD-MM-YYYY') fecha_ing,
 		 "REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.NOMBRE" nombre,
 		 geom,
 		 CASE 
@@ -140,14 +140,14 @@ CREATE TABLE capas_estaticas.amerb AS
 		 "REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.DETALLEESTADO" d_estado,
 		 "REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.SUPERFICIE" superficie,
 		 "REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.N_MINECON" n_decreto_e,
-		 timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.F_MINECON"/1000)) f_decreto_e,
+		 to_char(timezone('posix/America/Santiago', to_timestamp("REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.F_MINECON"/1000)), 'YYYY') f_decreto_e,
 		 "REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.N_DECRETOSSFFAA" n_decreto_d,
-		 timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.F_DECRETOSSFFAA"/1000)) f_decreto_d,
+		 to_char(timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.F_DECRETOSSFFAA"/1000)), 'YYYY') f_decreto_d,
 		 "REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.N_DECRETORENOV" n_decreto_r,
-		 timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.F_DECRETORENOV"/1000)) f_decreto_r,
+		 to_char(timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.F_DECRETORENOV"/1000)), 'YYYY') f_decreto_r,
 		 "REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.VIGENCIA" vigencia,
 		 "REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.N_RPA" n_rpa,
-		 timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.F_RPA"/1000)) f_rpa,
+		 to_char(timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.F_RPA"/1000)), 'YYYY') f_rpa,
 		 "REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.ORGANIZACION" organizacion,
 		 "REP_SUBPESCA2.ADM_URB.RRBB_SSP_T_AMERB.ESPECIES" especies,
 		 "REP_SUBPESCA2.ADM_URB.RRBB_SSP_PO_AMERB.OBJECTID" objectid
@@ -169,7 +169,7 @@ CREATE TABLE capas_estaticas.acuiamerb AS
  			 END AS tipo_actividad,
 		 "REP_SUBPESCA2.ADM_UOT.ACUI_SSP_T_ACUICULTURAAMERB.N_PERT" n_pert,
 		 "REP_SUBPESCA2.ADM_UOT.ACUI_SSP_T_ACUICULTURAAMERB.N_INGRESOCI" n_ingreso,
-		 timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_UOT.ACUI_SSP_T_ACUICULTURAAMERB.F_INGRESOCI"/1000)) fecha_ing,
+		 to_char(timezone('posix/America/Santiago',to_timestamp("REP_SUBPESCA2.ADM_UOT.ACUI_SSP_T_ACUICULTURAAMERB.F_INGRESOCI"/1000)), 'DD-MM-YYYY') fecha_ing,
 		 "REP_SUBPESCA2.ADM_UOT.ACUI_SSP_T_ACUICULTURAAMERB.CULTIVO" grupo_esp,
 		 "REP_SUBPESCA2.ADM_UOT.ACUI_SSP_T_ACUICULTURAAMERB.ESPECIE" especies,
 		 "REP_SUBPESCA2.ADM_UOT.ACUI_SSP_T_ACUICULTURAAMERB.SUPERFICIE" superficie,
