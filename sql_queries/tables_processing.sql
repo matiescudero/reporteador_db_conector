@@ -212,7 +212,9 @@ CREATE TEMP TABLE ult_pos AS(
 		  RIGHT JOIN entradas.grupos_toxinas grupos
 		  ON gestio_sp."Análisis" = grupos.analisis) tox_grup
 	LEFT JOIN entradas.limites_toxicologicos lim
-	ON lim.grupo = tox_grup.grupo);
+	ON lim.grupo = tox_grup.grupo
+	WHERE "Estado" = 'INFORMADO');
+
 
 /* Se genera un ID único para cada estación, estación - grupo de toxinas y estación - análisis */
 
