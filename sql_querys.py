@@ -40,3 +40,11 @@ estaciones = '''
 
              SELECT 'Return Value' = @return_value;
              '''
+
+detalle_caletas = '''
+             DECLARE @return_value int;
+
+             EXEC @return_value = [dbo].[sp_usach_caleta_detalle_Rpa_Emb_Org] @usuario = 999999999;
+
+             SELECT 'Return Value' = @return_value;
+             '''             
