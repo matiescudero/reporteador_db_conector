@@ -85,9 +85,13 @@ DROP COLUMN psmb;
 ALTER TABLE capas_estaticas.centros_no_psmb
 DROP COLUMN psmb;
 
-----------------------------
--- /* 1.3 Áreas PSMB */ ----
-----------------------------
+--------------------------------------------
+-- /* 1.3 Estado Áreas y Bancos PSMB */ ----
+--------------------------------------------
+
+--------------------------------------
+---- 1.3.1 Estado en Áreas PSMB ------
+--------------------------------------
 
 /* Se crea una capa espacial con un polígono que envuelve a las áreas PSMB*/
 
@@ -108,12 +112,27 @@ WHERE centros.estado_area <> 'Eliminada'
 GROUP BY centros.codigoarea, centros.estado_area, areas."Nombre Área", areas."Delimitación", areas."Fecha Estado Área");
 
 ---------------------------------------
--- /* 1.4 Existencias Moluscos */ ---
+---- 1.3.2 Estado en Bancos PSMB ------
 ---------------------------------------
 
-----------------------------------------
----- 1.4.1 Exitencias en centros -------
-----------------------------------------
+/* Se genera una capa espacial con los bancos naturales y su estado PSMB de acuerdo a la tabla 'areas_psmb' */
+
+DROP TABLE IF EXISTS capas_estaticas.bancos_psmb;
+
+CREATE TABLE capas_estaticas.bancos_psmb AS
+(SELECT bancos.*, areas."Estado Área" AS estado_psmb, areas."Fecha Estado Área" AS fecha_est
+FROM entradas.bancos_psmb as bancos
+LEFT JOIN entradas.areas_psmb as areas
+ON bancos.cd_psmb::int = areas."Código Área");
+
+
+---------------------------------------
+-- /* 1.4 Existencias Moluscos */ -----
+---------------------------------------
+
+-----------------------------------------
+---- 1.4.1 Existencias en centros -------
+-----------------------------------------
 
 /* Vista que contiene el último mes registrado para cada centro */
 
