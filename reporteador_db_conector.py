@@ -20,10 +20,16 @@ def execute_sql_query(mapstore_engine, sql_query, logger):
         sql_query (sqlalchemy.sql.elements.TextClause): 'reporteador_preprocessing' query
     """
 
-    with mapstore_engine.connect().execution_options(autocommit=True) as con:
-        con.execute(sql_query)
-    print("[OK] - SQL query successfully executed")
-    logger.debug("[OK] - EXECUTE_SQL_QUERY")
+    try:
+        with mapstore_engine.connect().execution_options(autocommit=True) as con:
+            con.execute(sql_query)
+        print("[OK] - SQL query successfully executed")
+        logger.debug("[OK] - EXECUTE_SQL_QUERY")
+
+    except Exception as e:
+        print('[ERROR] - Executing SQL Query on Mapstore DB')
+        logger.error('[ERROR] - EXECUTE_SQL_QUERY')
+        sys.exit(2)
 
 def open_sql_query(logger):
     """Open the SQL query to process the 'existencias' table.
@@ -39,27 +45,27 @@ def open_sql_query(logger):
     return sql_query
 
 
-def dfs_to_bd(config, mapstore_engine, df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones, logger):
-    """Copy the pandas Dataframes to the 'entradas' schema in the mapstore database. 
+def df_to_bd(config, mapstore_engine, df, table_name, logger):
+    """Copy the pandas Dataframes to the 'entradas' schema in the mapstore database.
 
     Args:
         config (dict): Dictionary with the config.json file information.
         mapstore_engine (sqlalchemy.engine.base.Engine.): SQL Alchemy connection engine.
-        df_areas_psmb (pandas DataFrame): Dataframe with information of PSMB areas.
-        df_centros_psmb (pandas DataFrame): Dataframe with information of PSMB centers.
-        df_existencias (pandas DataFrame): Dataframe with information of tons of mollusk.
-        df_salmonidos (pandas DataFrame): Dataframe with information of tons of salmon.
-        df_estaciones (pandas DataFrame): Dataframe with PSMB stations.
-    
+        df (pandas DataFrame): Dataframe to copy to the Mapstore DB.
+        table_name (str): Name of the table in the DB.
+
     """
 
-    df_areas_psmb.to_sql('areas_psmb', mapstore_engine, schema = config['mapstore']['schema'], if_exists = 'replace', index = False)
-    df_centros_psmb.to_sql('centros_psmb', mapstore_engine, schema = config['mapstore']['schema'], if_exists = 'replace', index = False)
-    df_existencias.to_sql('existencias_moluscos', mapstore_engine, schema = config['mapstore']['schema'], if_exists = 'replace', index = False)
-    df_salmonidos.to_sql('existencias_salmonidos', mapstore_engine, schema = config['mapstore']['schema'], if_exists = 'replace', index = False)
-    df_estaciones.to_sql('estaciones', mapstore_engine, schema = config['mapstore']['schema'], if_exists = 'replace', index = False)
+    try:
+        df.to_sql(table_name, mapstore_engine, schema = config['mapstore']['schema'], if_exists = 'replace', index = False)
 
-    logger.debug("[OK] - DFS_TO_BD")
+        print(table_name + " table successfully copied to the DB")
+        logger.debug("[OK] - DFS_TO_BD")
+
+    except Exception as e:
+        print('[ERROR] - Copying ' + table_name + ' table to DB')
+        logger.error('[ERROR] - ' + table_name + ' DF_TO_BD')
+        sys.exit(2)
 
 def tables_to_df(reporteador_connection, query_file, logger):
     """Read the input SQL querys and execute 'reporteador' database SP's and store them as pandas DFs. 
@@ -81,11 +87,12 @@ def tables_to_df(reporteador_connection, query_file, logger):
     df_existencias = pd.read_sql(query_file.existencias, reporteador_connection)
     df_salmonidos = pd.read_sql(query_file.salmonidos, reporteador_connection)
     df_estaciones = pd.read_sql(query_file.estaciones, reporteador_connection)
+    df_caletas = pd.read_sql(query_file.detalle_caletas, reporteador_connection)
 
     print("[OK] - SP's executed and stored successfully")
     logger.debug("[OK] - TABLES_TO_DF")
 
-    return df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones
+    return df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones, df_caletas
 
 def create_mapstore_engine(mapstore_connection, logger):
     """Creates the SQL Alchemy engine to access to the Mapstore database's tables. 
@@ -246,10 +253,15 @@ def main(argv):
     mapstore_engine = create_mapstore_engine(mapstore_connection, logger)
 
     # Execute 'reporteador' database SP's and store them as pandas DFs
-    df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones = tables_to_df(reporteador_connection, querys, logger)
+    df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones, df_caletas = tables_to_df(reporteador_connection, querys, logger)
 
     # Pandas DFs to mapstore database
-    dfs_to_bd(config, mapstore_engine, df_areas_psmb, df_centros_psmb, df_existencias, df_salmonidos, df_estaciones, logger)
+    df_to_bd(config, mapstore_engine, df_areas_psmb, "areas_psmb", logger)
+    df_to_bd(config, mapstore_engine, df_centros_psmb, "centros_psmb", logger)
+    df_to_bd(config, mapstore_engine, df_existencias, "existencias_moluscos", logger)
+    df_to_bd(config, mapstore_engine, df_salmonidos, "existencias_salmonidos", logger)
+    df_to_bd(config, mapstore_engine, df_estaciones, "estaciones", logger)
+    df_to_bd(config, mapstore_engine, df_caletas, "detalle_caletas", logger)
 
     # Open the 'reporteador_preprocessing.sql' file
     sql_query = open_sql_query(logger)
