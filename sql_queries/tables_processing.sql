@@ -17,9 +17,9 @@ Se genera una vista que contiene la geometría de los distintos centros de culti
 y se reproyecta al SRID 4326. Se establece además si estos son centros son PSMB o no.
 */
 
-DROP TABLE IF EXISTS capas_estaticas.centros_acuicultura;
+DROP TABLE IF EXISTS capas_estaticas.total_centros;
 
-CREATE TABLE capas_estaticas.centros_acuicultura AS (SELECT shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.N_CODIGOCENTRO" as codigocentro,
+CREATE TABLE capas_estaticas.total_centros AS (SELECT shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.N_CODIGOCENTRO" as codigocentro,
 									 centros."Código Área" AS codigoarea,
 									 shp.geom AS geom,
 									 shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.TITULAR" AS titular,
@@ -42,14 +42,12 @@ FROM entradas.concesiones_acuicultura AS shp
 LEFT JOIN entradas.centros_psmb AS centros
 ON shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.N_CODIGOCENTRO" = centros."Código Centro"
 WHERE shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.REGION" = 'REGIÓN DE LOS LAGOS' AND
-										(shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_GRUPOESPECIE" = 'MOLUSCOS' OR
-										shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_GRUPOESPECIE" = 'ABALONES o EQUINODERMOS') AND
-										shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_ESTADOTRAMITE" = 'CONCESION OTORGADA');
+									shp."REP_SUBPESCA2.ADM_UOT.PULLINQUE4_T_ACUICULTURA.T_ESTADOTRAMITE" = 'CONCESION OTORGADA');
 
 /* Se añade columna que indica si el centro es PSMB o no*/
-ALTER TABLE capas_estaticas.centros_acuicultura ADD COLUMN psmb varchar(5);
+ALTER TABLE capas_estaticas.total_centros ADD COLUMN psmb varchar(5);
 
-UPDATE capas_estaticas.centros_acuicultura SET psmb =
+UPDATE capas_estaticas.total_centros SET psmb =
 										CASE WHEN 
 										(codigoarea is NULL) OR 
 										(estado_area = 'Suspendida') OR
@@ -59,6 +57,17 @@ UPDATE capas_estaticas.centros_acuicultura SET psmb =
 											ELSE 'Si'
 										END;
 
+
+/* Se filtra la capa de centros para dejar únicamente los centros de cultivo de moluscos y abalones */
+
+DROP TABLE IF EXISTS capas_estaticas.centros_acuicultura;
+
+CREATE TABLE capas_estaticas.centros_acuicultura AS (
+	SELECT *
+	FROM capas_estaticas.total_centros
+	WHERE t_grupoespecie = 'MOLUSCOS' OR
+		  t_grupoespecie = 'ABALONES o EQUINODERMOS'
+);
 
 ---------------------------------------
 -- /* 1.2 Centros PSMB y no PSMB*/ ----
