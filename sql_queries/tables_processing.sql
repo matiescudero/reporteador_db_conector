@@ -473,7 +473,7 @@ CREATE TEMP TABLE ult_pos AS(
 			-- Tabla que incluye los nombres completos de cada toxina
 			entradas.grupos_toxinas AS grupos 
 		ON 
-			gestio_sp."Análisis" = grupos.analisis
+			gestio_sp."DescripcionAnalisis" = grupos.analisis
     ) AS tox_grup 
     LEFT JOIN
 		-- Tabla que incluye los limites para establecer contingencia para las distintas toxinas
@@ -507,9 +507,9 @@ ADD
 UPDATE 
   ult_pos 
 SET 
-  cod_estacion = "Còd. Centro Cultivo" || '-' || "Estación Monitoreo", 
-  cod_estacion_grupo = "Còd. Centro Cultivo" || '-' || "Estación Monitoreo" || '-' || grupo, 
-  cod_estacion_analisis = "Còd. Centro Cultivo" || '-' || "Estación Monitoreo" || '-' || "Análisis";
+  cod_estacion = "CodigoCentro" || '-' || "EstacionMonitoreo", 
+  cod_estacion_grupo = "CodigoCentro" || '-' || "EstacionMonitoreo" || '-' || grupo, 
+  cod_estacion_analisis = "CodigoCentro" || '-' || "EstacionMonitoreo" || '-' || "DescripcionAnalisis";
 
 ---------------------------------------------------------
 -- /* 2.2 Información toxicológica en áreas PSMB --------
@@ -530,16 +530,16 @@ CREATE TEMP TABLE ult_tox AS (
   FROM 
     (
       SELECT 
-        MAX("Fecha Extracción") AS fechaext, 
+        MAX("FechaExtraccion") AS fechaext, 
         cod_estacion, 
         cod_estacion_grupo, 
         cod_estacion_analisis, 
-        "Estación Monitoreo" as estacion, 
+        "EstacionMonitoreo" AS estacion, 
         grupo, 
-        "Análisis" as analisis, 
-        "Código Área" as cod_area, 
-        "Nombre Área" as n_area, 
-        "Còd. Centro Cultivo" cod_centro, 
+        "DescripcionAnalisis" AS analisis, 
+        "CodigoArea" AS cod_area, 
+        "DescripcionArea" AS n_area, 
+        "CodigoCentro" cod_centro, 
         tipo, 
         nm_toxina, 
         lim_cont, 
@@ -550,12 +550,12 @@ CREATE TEMP TABLE ult_tox AS (
         cod_estacion, 
         cod_estacion_grupo, 
         cod_estacion_analisis, 
-        "Estación Monitoreo", 
+        "EstacionMonitoreo", 
         grupo, 
-        "Análisis", 
-        "Código Área", 
-        "Nombre Área", 
-        "Còd. Centro Cultivo", 
+        "DescripcionAnalisis", 
+        "CodigoArea", 
+        "DescripcionArea", 
+        "CodigoCentro", 
         tipo, 
         nm_toxina, 
         lim_cont, 
@@ -565,7 +565,7 @@ CREATE TEMP TABLE ult_tox AS (
 		ult_pos 
 	ON 
 		ult_pos.cod_estacion_analisis = fech_tox.cod_estacion_analisis AND 
-		fech_tox.fechaext = ult_pos."Fecha Extracción"
+		fech_tox.fechaext = ult_pos."FechaExtraccion"
 );
 
 -- Se suman los resultados de las toxinas pertenecientes a un mismo grupo para cada estación.
@@ -582,8 +582,6 @@ RESULTADOS ESPERADOS:
 SUPUESTOS:
 
 */
-
-SELECT * FROM tox_est ORDER BY cod_estacion
 
 CREATE TEMP TABLE tox_est AS (
   SELECT 
