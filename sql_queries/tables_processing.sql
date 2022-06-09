@@ -443,13 +443,21 @@ CONTEXTO:
 muestreados para cada centro con los límites toxicológicos preestablecidos. 
 
 RESULTADOS ESPERADOS:
-- Tabla temporal en la cual cada registro representa los distintos análisis realizados en los distintos centros.
+- Tabla en la cual cada registro representa los distintos análisis realizados en los distintos centros.
 - Además, cada registro de cada centro posee el alias de la toxina muestreada y sus respectivos límites toxicológicos.
 
 SUPUESTOS:
 - Las tablas 'grupos_toxinas' y 'limites_toxicologicos' se encuentran en el esquema de entradas cómo tablas fijas.
 - Únicamente sirven los resultados con Estado = 'INFORMADO'
 */
+
+--SELECT * FROM entradas.gestio_sp WHERE "CodigoArea" = 10405 ORDER BY "FechaExtraccion" DESC 
+
+SELECT * FROM ult_pos WHERE "Signo" IS NULL
+
+--SELECT * FROM entradas.gestio_sp WHERE "Signo" IS NULL
+
+--SELECT * FROM ult_tox WHERE grupo = 'DTX' ORDER BY cod_estacion, resultado_toxina
 
 CREATE TEMP TABLE ult_pos AS(
   SELECT 
@@ -483,6 +491,50 @@ CREATE TEMP TABLE ult_pos AS(
   WHERE 
     "Estado" = 'INFORMADO'
 );
+
+SELECT * FROM ult_pos
+
+/*
+CONTEXTO:
+- Para un registro el valor de 'Resultado' es válido únicamente cuando "Signo" = null
+- Si "Signo" = '<' ---> "Resultado" = 0
+- Si "Signo" = 'T' AND ("grupo" != 'PTX' AND "grupo" != 'AZA') ---> "Resultado" = 0
+- Si "Signo" = 'T' AND ("grupo" = 'PTX' OR "grupo" = 'AZA') ---> "Resultado" = lim_cont
+- Si "Signo" IS NULL ---> "Resultado" = "Resultado"
+
+RESULTADOS ESPERADOS:
+
+SUPUESTOS:
+
+*/
+
+/*ALTER TABLE 
+  ult_pos 
+ADD 
+  COLUMN resultado1 float;
+*/
+
+UPDATE 
+  ult_pos 
+SET 
+  "Resultado" = CASE WHEN 
+		("Signo" = 'T') 
+	AND (
+		"grupo" = 'PTX' OR 
+	  	"grupo" = 'AZA') 
+	THEN lim_cont 
+	WHEN 
+		"Signo" = '<'
+		THEN 0
+	WHEN 
+		"Signo" = 'T' 
+	AND (
+		"grupo" != 'PTX' AND 
+		"grupo" != 'AZA')
+		THEN 0
+	ELSE "Resultado"
+	END
+;
 
 /*
 CONTEXTO:
@@ -720,6 +772,7 @@ CREATE TEMP TABLE pivot_est AS (
 
 DROP 
   TABLE IF EXISTS capas_estaticas.areas_contingencia;
+
 CREATE TABLE capas_estaticas.areas_contingencia AS (
   SELECT 
     shp.geom, 
