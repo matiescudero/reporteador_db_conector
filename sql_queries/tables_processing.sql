@@ -451,14 +451,6 @@ SUPUESTOS:
 - Únicamente sirven los resultados con Estado = 'INFORMADO'
 */
 
---SELECT * FROM entradas.gestio_sp WHERE "CodigoArea" = 10405 ORDER BY "FechaExtraccion" DESC 
-
-SELECT * FROM ult_pos WHERE "Signo" IS NULL
-
---SELECT * FROM entradas.gestio_sp WHERE "Signo" IS NULL
-
---SELECT * FROM ult_tox WHERE grupo = 'DTX' ORDER BY cod_estacion, resultado_toxina
-
 CREATE TEMP TABLE ult_pos AS(
   SELECT 
     tox_grup.*, 
@@ -492,32 +484,26 @@ CREATE TEMP TABLE ult_pos AS(
     "Estado" = 'INFORMADO'
 );
 
-SELECT * FROM ult_pos
 
 /*
 CONTEXTO:
-- Para un registro el valor de 'Resultado' es válido únicamente cuando "Signo" = null
+- Para un registro el valor de 'Resultado' es válido únicamente cuando "Signo" = null, en caso contrario, existen excepciones.
+
+RESULTADOS ESPERADOS:
+- La columna de resultado se actualice de acuerdo a las condiciones señaladas en los supuestos.
+
+SUPUESTOS:
 - Si "Signo" = '<' ---> "Resultado" = 0
 - Si "Signo" = 'T' AND ("grupo" != 'PTX' AND "grupo" != 'AZA') ---> "Resultado" = 0
 - Si "Signo" = 'T' AND ("grupo" = 'PTX' OR "grupo" = 'AZA') ---> "Resultado" = lim_cont
 - Si "Signo" IS NULL ---> "Resultado" = "Resultado"
-
-RESULTADOS ESPERADOS:
-
-SUPUESTOS:
-
-*/
-
-/*ALTER TABLE 
-  ult_pos 
-ADD 
-  COLUMN resultado1 float;
 */
 
 UPDATE 
   ult_pos 
 SET 
-  "Resultado" = CASE WHEN 
+  "Resultado" = CASE WHEN
+  		-- Condición en caso de que se registren trazas Y PTX o AZA
 		("Signo" = 'T') 
 	AND (
 		"grupo" = 'PTX' OR 
@@ -620,20 +606,21 @@ CREATE TEMP TABLE ult_tox AS (
 		fech_tox.fechaext = ult_pos."FechaExtraccion"
 );
 
--- Se suman los resultados de las toxinas pertenecientes a un mismo grupo para cada estación.
--- Además, se genera una columna con la acción asignada para cada toxina, de acuerdo a los límites preestablecidos
-
 /*
 CONTEXTO:
-- De acuerdo al grupo al que pertenece cada toxina se deben sumar las 'sub-toxinas' en cada estación. Por ejemplo,
-Para el análisis de Azáspirácidos en una estación, se debe sumar para esa estación: AZA1, AZA2 y AZA3 y ahí comparar con los límites.
+- De acuerdo al grupo al que pertenece cada toxina se deben sumar las 'sub-toxinas' en cada estación.
+- La suma de las toxinas por estación debe compararse con los límites toxicológicos del grupo.
+- Por ejemplo, para el análisis de Azáspirácidos en una estación, se debe sumar para esa estación: AZA1, AZA2 y AZA3 y ahí comparar con los límites.
 
 RESULTADOS ESPERADOS:
-- 
+- Registros desagragados a nivel de grupo para cada estacion.
+- n_accion para cada estacion-grupo en función del resultado y sus limites toxicologicos
 
 SUPUESTOS:
 
 */
+SELECT * FROM tox_est ORDER BY cod_estacion_grupo
+
 
 CREATE TEMP TABLE tox_est AS (
   SELECT 
@@ -674,6 +661,11 @@ CREATE TEMP TABLE tox_est AS (
         lim_tox
     ) AS tox_est
 );
+
+/*
+
+
+*/
 
 -- Se genera tabla para añadir la causal de la acción a cada área 
 
@@ -821,11 +813,11 @@ ADD
   COLUMN pre_causal varchar(100);
 
 UPDATE 
-  capas_estaticas.areas_contingencia 
+	capas_estaticas.areas_contingencia 
 SET 
-  accion = CASE WHEN n_accion = 3 THEN 'valores tóxicos' WHEN n_accion = 2 THEN 'valores subtóxicos' ELSE 'sin presencia de toxinas' END, 
-  msje = CASE WHEN n_accion = 3 THEN 'registra presencia de' WHEN n_accion = 2 THEN 'registra presencia de' ELSE 'se encuentra' END, 
-  pre_causal = CASE WHEN n_accion = 3 THEN 'de' WHEN n_accion = 2 THEN 'de' ELSE '' END;
+	accion = CASE WHEN n_accion = 3 THEN 'valores tóxicos' WHEN n_accion = 2 THEN 'valores subtóxicos' ELSE 'sin presencia de toxinas' END, 
+	msje = CASE WHEN n_accion = 3 THEN 'registra presencia de' WHEN n_accion = 2 THEN 'registra presencia de' ELSE 'se encuentra' END, 
+	pre_causal = CASE WHEN n_accion = 3 THEN 'de' WHEN n_accion = 2 THEN 'de' ELSE '' END;
   
 -- Se eliminan las columnas que no sirven
 ALTER TABLE 
