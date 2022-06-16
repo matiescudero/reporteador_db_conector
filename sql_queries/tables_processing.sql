@@ -440,10 +440,10 @@ CREATE TABLE capas_estaticas.centros_salmonidos AS (
 /*
 CONTEXTO:
 - Para establecer contingencia toxicológica en cada uno de los centros de cultivo es necesario comparar los resultados
-muestreados para cada centro con los límites toxicológicos preestablecidos. 
+muestreados para cada estación con los límites toxicológicos preestablecidos. 
 
 RESULTADOS ESPERADOS:
-- Tabla en la cual cada registro representa los distintos análisis realizados en los distintos centros.
+- Tabla en la cual cada registro representa los distintos análisis realizados en las distintas estaciones.
 - Además, cada registro de cada centro posee el alias de la toxina muestreada y sus respectivos límites toxicológicos.
 
 SUPUESTOS:
@@ -487,10 +487,10 @@ CREATE TEMP TABLE ult_pos AS(
 
 /*
 CONTEXTO:
-- Para un registro el valor de 'Resultado' es válido únicamente cuando "Signo" = null, en caso contrario, existen excepciones.
+- Para cada registro el valor de 'Resultado' es válido únicamente cuando "Signo" = null, en caso contrario, existen excepciones.
 
 RESULTADOS ESPERADOS:
-- La columna de resultado se actualice de acuerdo a las condiciones señaladas en los supuestos.
+- La columna de resultado se actualiza de acuerdo a las condiciones señaladas en los supuestos.
 
 SUPUESTOS:
 - Si "Signo" = '<' ---> "Resultado" = 0
@@ -615,12 +615,10 @@ CONTEXTO:
 RESULTADOS ESPERADOS:
 - Registros desagragados a nivel de grupo para cada estacion.
 - n_accion para cada estacion-grupo en función del resultado y sus limites toxicologicos
-
-SUPUESTOS:
-
 */
-SELECT * FROM tox_est ORDER BY cod_estacion_grupo
 
+-- SELECT * FROM entradas.gestio_sp WHERE "CodigoArea" = 10326 AND "Estado" = 'INFORMADO' AND "Signo" IS NULL
+--SELECT * FROM tox_est WHERE cod_area = 10326
 
 CREATE TEMP TABLE tox_est AS (
   SELECT 
@@ -663,13 +661,14 @@ CREATE TEMP TABLE tox_est AS (
 );
 
 /*
+CONTEXTO:
+- Para cada área PSMB interesa saber qué toxina está causando la contingencia, en caso de existir. Es por esto que
+se calcula para cada toxina perteneciente a cada grupo, la diferencia entre el resultado y el límite toxicológico.
 
+RESULTADOS ESPERADOS:
+- Nueva columna a la tabla de estacion-grupo, donde se indica la diferencia señalada en el contexto.
 
 */
-
--- Se genera tabla para añadir la causal de la acción a cada área 
-
--- Se genera columna que almacena la diferencia entre el resultado de cada análisis y el máximo limite toxicológico
 
 ALTER TABLE 
   tox_est 
@@ -681,18 +680,35 @@ UPDATE
 SET 
   dif_tox = resultado - lim_tox;
 
--- Para cada área se selecciona únicamente aquel registro que más se acerque al límite tóxico de cada toxina.
+
+/*
+CONTEXTO:
+- Se establece cómo toxina causal de cada área la que presenta mayor 'dif_tox'
+
+RESULTADOS ESPERADOS:
+- Tabla que contenga todas las áreas PSMB EN CONTINGENCIA junto a su resultado, dif_tox y agente causal de la contingencia.
+
+SUPUESTOS:
+- dif_tox está construido en base a la diferencia del resultado y el MÁXIMO límite toxicológico.
+- Se considera una área en contingencia aquella que alguna de sus estaciones presenta valores tóxicos o subtóxicos para algún grupo muestreado.
+*/
 
 CREATE TEMP TABLE causal_area AS (
   SELECT 
-    max_tox.*, 
-    CASE WHEN (dif_tox > 0) THEN nm_toxina WHEN (
-      dif_tox < 0 
-      AND resultado > lim_cont
-    ) THEN nm_toxina ELSE ' ' END AS causal 
+    max_tox.*,
+	-- Caso cuando se presentan resultados tóxicos
+    CASE WHEN (dif_tox > 0) 
+		THEN nm_toxina
+	-- Caso cuando se presentan resultados subtóxicos
+	WHEN (dif_tox < 0 AND
+		resultado > lim_cont) 
+		THEN nm_toxina
+	-- Caso cuando no hay contingencia
+	ELSE ' ' END AS causal 
   FROM 
     (
-      SELECT 
+      SELECT
+		-- La selección se hace en base a áreas
         DISTINCT ON (cod_area) cod_area, 
         grupo, 
         nm_toxina, 
@@ -703,7 +719,8 @@ CREATE TEMP TABLE causal_area AS (
         dif_tox 
       FROM 
         tox_est 
-      WHERE 
+      WHERE
+		-- únicamente áreas en contingencia
         n_accion > 1 
       ORDER BY 
         cod_area, 
@@ -714,12 +731,14 @@ CREATE TEMP TABLE causal_area AS (
 
 -- Se 'pivotean' los resultados para cada toxina y se agrupar por estación
 
+
 CREATE TEMP TABLE pivot_est AS (
   SELECT 
     cod_estacion, 
     estacion, 
     cod_area, 
-    cod_centro, 
+    cod_centro,
+	-- Se selecciona el máximo resultado
     SUM(res_vpm) AS res_vpm, 
     MAX(fecha_vpm) AS fecha_vpm, 
     SUM(res_vam) AS res_vam, 
@@ -735,8 +754,9 @@ CREATE TEMP TABLE pivot_est AS (
     MAX(n_accion) AS n_accion 
   FROM 
     (
+	  -- Se añaden las columnas 'res_<toxina>' y 'fecha_<toxina>' para cada estación-grupo
       SELECT 
-        *, 
+        *,
         CASE WHEN (grupo = 'VPM') THEN resultado ELSE 0 END AS res_vpm, 
         CASE WHEN (grupo = 'VPM') THEN tox_est.fechaext END AS fecha_vpm, 
         CASE WHEN (grupo = 'VAM') THEN resultado ELSE 0 END AS res_vam, 
@@ -749,7 +769,7 @@ CREATE TEMP TABLE pivot_est AS (
         CASE WHEN (grupo = 'DTX') THEN tox_est.fechaext END AS fecha_dtx, 
         CASE WHEN (grupo = 'AZA') THEN resultado ELSE 0 END AS res_aza, 
         CASE WHEN (grupo = 'AZA') THEN tox_est.fechaext END AS fecha_aza 
-      FROM 
+      FROM
         tox_est
     ) AS pivot 
   GROUP BY 
@@ -788,8 +808,8 @@ CREATE TABLE capas_estaticas.areas_contingencia AS (
         MAX(fecha_ptxao) as fecha_ptxao, 
         MAX(res_dtx) as res_dtx, 
         MAX(fecha_dtx) as fecha_dtx, 
-        MAX(res_vpm) as res_aza, 
-        MAX(fecha_vpm) as fecha_aza, 
+        MAX(res_aza) as res_aza, 
+        MAX(fecha_aza) as fecha_aza, 
         MAX(n_accion) as n_accion, 
         causal.causal 
       FROM 
