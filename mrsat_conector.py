@@ -19,21 +19,21 @@ from datetime import date
  ####################################
  #### CAMBIAR REPLACE POR APPEND ####
  ####################################
-def df_to_db(df, config_data, mapstore_engine, table_name, logger):
-    """Copy the IDE DataFrames to the mapstore database.
+def append_new_records(df, config_data, db_engine, table_name, logger):
+    """Append the records from the past 3 days to the database table with toxicologic data.
 
     Args:
-        df (pandas.core.frame.DataFrame): Dataframe from IDE service.
+        df (pandas.core.frame.DataFrame): Dataframe with the new records.
         config_data (dict): config.json parameters.
-        mapstore_engine (sqlalchemy.engine.base.Engine): Mapstore DB sqlalchemy engine.
-        table_name (str): Name of the output table on the mapstore's database.
+        db_engine (sqlalchemy.engine.base.Engine): Database sqlalchemy engine.
+        table_name (str): Name of the output table on the database.
     
     Raises:
         SAWarning: Did not recognize type 'geometry' of column 'geom'
     """
 
     df.to_sql(table_name, 
-                mapstore_engine, 
+                db_engine, 
                 if_exists = 'replace', 
                 schema = config_data['mapstore']['schema'], 
                 index = False)
@@ -42,21 +42,21 @@ def df_to_db(df, config_data, mapstore_engine, table_name, logger):
     logger.debug("[OK] - " + table_name.upper() + " DF_TO_DB")
 
 
-def execute_sql_query(mapstore_engine, sql_query, logger):
-    """Execute the given sql query on mapstore database.
+def delete_old_records(db_engine, sql_query, logger):
+    """Execute the given sql query on the database, which deletes all the records from the past 3 days.  
 
     Args:
-        mapstore_engine (sqlalchemy.engine.base.Engine): Mapstore DB sqlalchemy engine.
+        db_engine (sqlalchemy.engine.base.Engine): Database sqlalchemy engine.
         sql_query (sqlalchemy.sql.elements.TextClause): SQL file query
     """
 
-    with mapstore_engine.connect().execution_options(autocommit=True) as con:
+    with db_engine.connect().execution_options(autocommit=True) as con:
         con.execute(sql_query)
     print("[OK] - SQL query successfully executed")
     logger.debug("[OK] - EXECUTE_SQL_QUERY")
 
 def open_sql_query(sql_file, logger):
-    """Open the SQL query to add the geometry type to the IDE tables on mapstore database.
+    """Open the passed SQL query as a sqlalchemy text clause.
 
     Args:
         sql_file (str): Name of the .sql file to execute
@@ -72,23 +72,23 @@ def open_sql_query(sql_file, logger):
     return sql_query
 
 
-def create_mapstore_engine(mapstore_connection, logger):
-    """Create sqlalchemy mapstore engine based on the mapstore connection string.
+def create_db_engine(db_connection, logger):
+    """Create sqlalchemy database engine based on the database connection string.
 
     Args:
-        mapstore_connection (str): string with the mapstore databse connection.
+        db_connection (str): string with the databse connection.
 
     Returns:
         sqlalchemy.engine.base.Engine
     """
 
-    mapstore_engine = create_engine(mapstore_connection)
+    db_engine = create_engine(db_connection)
     print("[OK] - SQLAlchemy engine succesfully generated")
-    logger.debug("[OK] - CREATE_MAPSTORE_ENGINE")
-    return mapstore_engine
+    logger.debug("[OK] - CREATE_db_ENGINE")
+    return db_engine
 
-def create_mapstore_connection(config_data, logger):
-    """Create mapstore connection string based on the config file parameters.
+def create_db_connection(config_data, logger):
+    """Create the database connection string based on the config file parameters.
 
     Args:
         config_data (dict): config.json parameters.
@@ -97,15 +97,15 @@ def create_mapstore_connection(config_data, logger):
         str
     """
 
-    mapstore_connection = 'postgresql://{}:{}@{}:{}/{}'.format(
+    db_connection = 'postgresql://{}:{}@{}:{}/{}'.format(
         config_data['mapstore']['user'],
         config_data['mapstore']['passwd'], 
         config_data['mapstore']['host'], 
         config_data['mapstore']['port'], 
         config_data['mapstore']['db'])
     print("[OK] - Connection string successfully generated")
-    logger.debug("[OK] - CREATE_MAPSTORE_CONNECTION")
-    return mapstore_connection   
+    logger.debug("[OK] - CREATE_DB_CONNECTION")
+    return db_connection   
 
 
 ### FUNCIONES PARA EXTRAER LA INFORMACIÓN NECESARIA DEL WEB SERVICE

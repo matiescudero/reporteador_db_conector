@@ -465,15 +465,15 @@ CREATE TEMP TABLE ult_pos AS(
     (
       SELECT
 		-- Todas las columnas de la tabla del mrSAT.
-        gestio_sp.*, 
+        mrsat_60days.*, 
         grupos.grupo 
       FROM 
-        entradas.gestio_sp 
+        entradas.mrsat_60days 
         RIGHT JOIN
 			-- Tabla que incluye los nombres completos de cada toxina
 			entradas.grupos_toxinas AS grupos 
 		ON 
-			gestio_sp."DescripcionAnalisis" = grupos.analisis
+			mrsat_60days."DescripcionAnalisis" = grupos.analisis
     ) AS tox_grup 
     LEFT JOIN
 		-- Tabla que incluye los limites para establecer contingencia para las distintas toxinas
@@ -494,8 +494,8 @@ RESULTADOS ESPERADOS:
 
 SUPUESTOS:
 - Si "Signo" = '<' ---> "Resultado" = 0
-- Si "Signo" = 'T' AND ("grupo" != 'PTX' AND "grupo" != 'AZA') ---> "Resultado" = 0
-- Si "Signo" = 'T' AND ("grupo" = 'PTX' OR "grupo" = 'AZA') ---> "Resultado" = lim_cont
+- Si "Signo" = 'T' AND ("grupo" != 'DTX' AND "grupo" != 'AZA') ---> "Resultado" = 0
+- Si "Signo" = 'T' AND ("grupo" = 'DTX' OR "grupo" = 'AZA') ---> "Resultado" = lim_cont
 - Si "Signo" IS NULL ---> "Resultado" = "Resultado"
 */
 
@@ -503,10 +503,10 @@ UPDATE
   ult_pos 
 SET 
   "Resultado" = CASE WHEN
-  		-- Condición en caso de que se registren trazas Y PTX o AZA
+  		-- Condición en caso de que se registren trazas Y DTX o AZA
 		("Signo" = 'T') 
 	AND (
-		"grupo" = 'PTX' OR 
+		"grupo" = 'DTX' OR 
 	  	"grupo" = 'AZA') 
 	THEN lim_cont 
 	WHEN 
@@ -515,7 +515,7 @@ SET
 	WHEN 
 		"Signo" = 'T' 
 	AND (
-		"grupo" != 'PTX' AND 
+		"grupo" != 'DTX' AND 
 		"grupo" != 'AZA')
 		THEN 0
 	ELSE "Resultado"
@@ -525,7 +525,8 @@ SET
 /*
 CONTEXTO:
 - Para poder realizar el procesamiento de la información toxicológica es necesario separar la información según
-su estación, grupo de toxina y análisis específico.
+su estación, grupo de toxina y análisis específico. Este se diferencia en base a sí el registro corresponde a un 
+centro o un banco.
 
 RESULTADOS ESPERADOS:
 - Se le añaden las columnas 'cod_estacion', 'cod_estacion_grupo' y 'cod_estacion_analisis' a la tabla temporal ult_pos
@@ -541,17 +542,17 @@ ADD
 ADD 
   COLUMN cod_estacion_analisis varchar(100);
 
--- Se concatenan los distintos id's
+-- Se concatenan los distintos id's en base a si el registro corresponde a un centro o a un banco
 UPDATE 
   ult_pos 
 SET 
-  cod_estacion = "CodigoCentro" || '-' || "EstacionMonitoreo", 
-  cod_estacion_grupo = "CodigoCentro" || '-' || "EstacionMonitoreo" || '-' || grupo, 
-  cod_estacion_analisis = "CodigoCentro" || '-' || "EstacionMonitoreo" || '-' || "DescripcionAnalisis";
+  cod_estacion = (CASE WHEN "CodigoCentro" != 0 THEN ("CodigoCentro" || '-' || "EstacionMonitoreo") ELSE ("CodigoBancoNatural" || '-' || "EstacionMonitoreo") END), 
+  cod_estacion_grupo = (CASE WHEN "CodigoCentro" != 0 THEN ("CodigoCentro" || '-' || "EstacionMonitoreo" || '-' || grupo) ELSE ("CodigoBancoNatural" || '-' || "EstacionMonitoreo" || '-' || grupo) END), 
+  cod_estacion_analisis = (CASE WHEN "CodigoCentro" != 0 THEN ("CodigoCentro" || '-' || "EstacionMonitoreo" || '-' || "DescripcionAnalisis") ELSE ("CodigoBancoNatural" || '-' || "EstacionMonitoreo" || '-' || "DescripcionAnalisis") END);
 
----------------------------------------------------------
--- /* 2.2 Información toxicológica en áreas PSMB --------
----------------------------------------------------------
+------------------------------------------------------------
+-- /* 2.2 Información toxicológica en áreas y bancos PSMB --
+------------------------------------------------------------
 
 /*
 CONTEXTO:
@@ -617,8 +618,6 @@ RESULTADOS ESPERADOS:
 - n_accion para cada estacion-grupo en función del resultado y sus limites toxicologicos
 */
 
--- SELECT * FROM entradas.gestio_sp WHERE "CodigoArea" = 10326 AND "Estado" = 'INFORMADO' AND "Signo" IS NULL
---SELECT * FROM tox_est WHERE cod_area = 10326
 
 CREATE TEMP TABLE tox_est AS (
   SELECT 
@@ -731,6 +730,15 @@ CREATE TEMP TABLE causal_area AS (
 
 -- Se 'pivotean' los resultados para cada toxina y se agrupar por estación
 
+SELECT count(*) FROM capas_estaticas.areas_contingencia
+
+/*
+RESULTADOS ESPERADOS:
+- 
+
+*/
+
+
 
 CREATE TEMP TABLE pivot_est AS (
   SELECT 
@@ -781,6 +789,10 @@ CREATE TEMP TABLE pivot_est AS (
 
 -- Se genera tabla de áreas
 -- Se agrupan los resultados por área, se une la causal a cada área y se espacializan 
+
+
+-- ACÁ METER LA SEPARACIÓN PARA BANCOS NATURALES
+
 
 DROP 
   TABLE IF EXISTS capas_estaticas.areas_contingencia;

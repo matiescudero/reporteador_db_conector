@@ -1,2 +1,4 @@
-log/*
+bin/*
+lib/*
+pyvenv.cfg
 __pycache__/

@@ -31,14 +31,14 @@ def execute_sql_query(mapstore_engine, sql_query, logger):
         logger.error('[ERROR] - EXECUTE_SQL_QUERY')
         sys.exit(2)
 
-def open_sql_query(logger):
+def open_sql_query(sql_query, logger):
     """Open the SQL query to process the 'existencias' table.
 
     Returns:
         sqlalchemy.sql.elements.TextClause
     """
 
-    with open("./sql_queries/reporteador_preprocessing.sql") as file:
+    with open("./sql_queries/" + sql_query) as file:
         sql_query = text(file.read())
     print("[OK] - SQL file successfully opened")
     logger.debug("[OK] - OPEN_SQL_QUERY")
@@ -264,7 +264,7 @@ def main(argv):
     df_to_bd(config, mapstore_engine, df_caletas, "detalle_caletas", logger)
 
     # Open the 'reporteador_preprocessing.sql' file
-    sql_query = open_sql_query(logger)
+    sql_query = open_sql_query('reporteador_preprocessing.sql', logger)
 
     # Execute the SQL to preprocces the input tables
     execute_sql_query(mapstore_engine, sql_query, logger)
