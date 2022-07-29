@@ -730,11 +730,14 @@ CREATE TEMP TABLE causal_area AS (
 
 -- Se 'pivotean' los resultados para cada toxina y se agrupar por estación
 
-SELECT count(*) FROM capas_estaticas.areas_contingencia
+-- SELECT count(*) FROM capas_estaticas.areas_contingencia
+SELECT * FROM pivot_est
+WHERE cod_centro = 0;
+
 
 /*
 RESULTADOS ESPERADOS:
-- 
+- Tabla en la que cada registro representa un área o banco en la que se muestra el máximo resultado 
 
 */
 
