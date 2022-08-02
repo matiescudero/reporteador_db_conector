@@ -484,7 +484,6 @@ CREATE TEMP TABLE ult_pos AS(
     "Estado" = 'INFORMADO'
 );
 
-
 /*
 CONTEXTO:
 - Para cada registro el valor de 'Resultado' es válido únicamente cuando "Signo" = null, en caso contrario, existen excepciones.
@@ -731,17 +730,15 @@ CREATE TEMP TABLE causal_area AS (
 -- Se 'pivotean' los resultados para cada toxina y se agrupar por estación
 
 -- SELECT count(*) FROM capas_estaticas.areas_contingencia
-SELECT * FROM pivot_est
-WHERE cod_centro = 0;
+--SELECT * FROM pivot_est
+--WHERE cod_centro = 0;
 
 
 /*
 RESULTADOS ESPERADOS:
-- Tabla en la que cada registro representa un área o banco en la que se muestra el máximo resultado 
+- Tabla en la que cada registro representa un área o banco en la que se muestra el máximo resultado de cada grupo de toxinas 
 
 */
-
-
 
 CREATE TEMP TABLE pivot_est AS (
   SELECT 
@@ -794,8 +791,7 @@ CREATE TEMP TABLE pivot_est AS (
 -- Se agrupan los resultados por área, se une la causal a cada área y se espacializan 
 
 
--- ACÁ METER LA SEPARACIÓN PARA BANCOS NATURALES
-
+-- Áreas contingencia
 
 DROP 
   TABLE IF EXISTS capas_estaticas.areas_contingencia;
@@ -837,7 +833,51 @@ CREATE TABLE capas_estaticas.areas_contingencia AS (
     RIGHT JOIN capas_estaticas.areas_psmb as shp ON shp.codigoarea = areas.cod_area
 );
 
--- Se generan campos para determinar la acción y un msje
+-- Bancos Contingencia
+
+DROP 
+  TABLE IF EXISTS capas_estaticas.bancos_contingencia;
+
+CREATE TABLE capas_estaticas.bancos_contingencia AS (
+  SELECT 
+    shp.id, 
+    shp.geom,
+    areas.*, 
+    shp.descriptor, 
+    shp.comuna, 
+    shp.especies,
+	shp.condicion,
+	shp.seleccion
+  FROM 
+    (
+      SELECT 
+        piv.cod_area, 
+        MAX(res_vpm) as res_vpm, 
+        MAX(fecha_vpm) as fecha_vpm, 
+        MAX(res_vam) as res_vam, 
+        MAX(fecha_vam) as fecha_vam, 
+        MAX(res_ytx) as res_ytx, 
+        MAX(fecha_ytx) as fecha_ytx, 
+        MAX(res_ptx_ao) as res_ptx_ao, 
+        MAX(fecha_ptxao) as fecha_ptxao, 
+        MAX(res_dtx) as res_dtx, 
+        MAX(fecha_dtx) as fecha_dtx, 
+        MAX(res_aza) as res_aza, 
+        MAX(fecha_aza) as fecha_aza, 
+        MAX(n_accion) as n_accion, 
+        causal.causal 
+      FROM 
+        pivot_est as piv 
+        LEFT JOIN causal_area as causal ON piv.cod_area = causal.cod_area 
+      GROUP BY 
+        piv.cod_area, 
+        causal.causal
+    ) as areas 
+    RIGHT JOIN entradas.bancos_psmb as shp ON shp.cd_psmb::int = areas.cod_area
+);
+
+-- Se generan campos para determinar la acción y un msje para la capa de centros
+
 ALTER TABLE 
   capas_estaticas.areas_contingencia 
 ADD 
@@ -853,7 +893,28 @@ SET
 	accion = CASE WHEN n_accion = 3 THEN 'valores tóxicos' WHEN n_accion = 2 THEN 'valores subtóxicos' ELSE 'sin presencia de toxinas' END, 
 	msje = CASE WHEN n_accion = 3 THEN 'registra presencia de' WHEN n_accion = 2 THEN 'registra presencia de' ELSE 'se encuentra' END, 
 	pre_causal = CASE WHEN n_accion = 3 THEN 'de' WHEN n_accion = 2 THEN 'de' ELSE '' END;
+
+
+-- Se generan campos para determinar la acción y un msje para la capa de bancos
+
+ALTER TABLE 
+  capas_estaticas.bancos_contingencia 
+ADD 
+  COLUMN accion varchar(80), 
+ADD 
+  COLUMN msje varchar(100), 
+ADD 
+  COLUMN pre_causal varchar(100);
+
+UPDATE 
+	capas_estaticas.bancos_contingencia 
+SET 
+	accion = CASE WHEN n_accion = 3 THEN 'valores tóxicos' WHEN n_accion = 2 THEN 'valores subtóxicos' ELSE 'sin presencia de toxinas' END, 
+	msje = CASE WHEN n_accion = 3 THEN 'registra presencia de' WHEN n_accion = 2 THEN 'registra presencia de' ELSE 'se encuentra' END, 
+	pre_causal = CASE WHEN n_accion = 3 THEN 'de' WHEN n_accion = 2 THEN 'de' ELSE '' END;
   
+
+
 -- Se eliminan las columnas que no sirven
 ALTER TABLE 
   capas_estaticas.areas_contingencia 
@@ -862,6 +923,13 @@ DROP
 DROP 
   COLUMN n_accion;
  
+ALTER TABLE 
+  capas_estaticas.bancos_contingencia 
+DROP 
+  COLUMN cod_area, 
+DROP 
+  COLUMN n_accion;
+
 -- Capa que incluye el centroide del centro de la estación que registra valores toxicológicos elevados 
 
 DROP 
