@@ -5,6 +5,17 @@
         "passwd": "T_T54ch201",
         "user": "usr_usach"
     },
+    "mrsat": {
+        "db_type": "mssql+pyodbc",
+        "db": "SNPA",
+        "schema": "mrsat",
+        "last_days_table": "mrsat_60days",
+        "historic_table": "mrsat",
+        "host": "10.5.1.18",
+        "port": "1433",
+        "passwd": "C1_7Y02aps",
+        "user": "citiaps"
+    },
     "mapstore": {
         "db": "yoinformo_gis",
         "schema": "entradas",
