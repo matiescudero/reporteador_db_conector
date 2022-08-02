@@ -37,7 +37,7 @@ def df_to_db(df, config_data, db_engine, logger):
         db_engine (sqlalchemy.engine.base.Engine): Database sqlalchemy engine.
         
     """
-    table = config_data['mapstore']['last_days_table']
+    table = 'mrsat_60days'
     schema = config_data['mapstore']['schema']
     
     try:
@@ -156,8 +156,8 @@ def create_db_string(config_data, db_object, logger):
         config_data[db_object]['db'])
 
     # Case if the DB is SQL Server
-    if config_data['sernapesca']['db_type'] == 'mssql+pyodbc':
-        db_string = db_string + '?driver=ODBC+Driver+17+for+SQL+Server' #Cambiar cuando se pruebe en la máquina de SERNAPESCA
+    if config_data[db_object]['db_type'] == 'mssql+pyodbc':
+        db_string = db_string + '?driver=SQL+Server' #Cambiar cuando se pruebe en la máquina de SERNAPESCA
     
     print("[OK] - Connection string successfully generated")
     logger.debug("[OK] - CREATE_DB_STRING")
