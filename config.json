@@ -17,6 +17,7 @@
         "user": "citiaps"
     },
     "mapstore": {
+        "db_type": "postgresql",
         "db": "yoinformo_gis",
         "schema": "entradas",
 	    "host": "138.197.13.37",
