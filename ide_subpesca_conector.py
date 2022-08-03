@@ -71,11 +71,17 @@ def create_mapstore_engine(mapstore_connection, logger):
     Returns:
         sqlalchemy.engine.base.Engine
     """
+    try:
+        mapstore_engine = create_engine(mapstore_connection)
+        print("[OK] - SQLAlchemy engine succesfully generated")
+        logger.debug("[OK] - CREATE_MAPSTORE_ENGINE")
+        return mapstore_engine
 
-    mapstore_engine = create_engine(mapstore_connection)
-    print("[OK] - SQLAlchemy engine succesfully generated")
-    logger.debug("[OK] - CREATE_MAPSTORE_ENGINE")
-    return mapstore_engine
+    except Exception as e:
+        print('[ERROR] - Creating DB engine')
+        print(e)
+        logger.error('[ERROR] - CREATE_MAPSTORE_ENGINE')
+        sys.exit(2)
 
 def create_mapstore_connection(config_data, logger):
     """Create mapstore connection string based on the config file parameters.
